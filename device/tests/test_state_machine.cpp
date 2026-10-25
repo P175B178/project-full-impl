@@ -110,3 +110,14 @@ TEST(StateMachineTest, UpdateLeavesFault) {
   EXPECT_EQ(t->from, State::Fault);
   EXPECT_EQ(t->to, State::Normal);
 }
+
+TEST(StateMachineTest, AForcedStateLastsUntilTheNextUpdate) {
+  StateMachine sm{thresholds};
+  auto t = sm.force(State::Alert);
+  ASSERT_TRUE(t.has_value());
+  EXPECT_EQ(t->to, State::Alert);
+  t = sm.update({.temperature = 20.0F, .humidity = 50.0F});
+  ASSERT_TRUE(t.has_value());
+  EXPECT_EQ(t->from, State::Alert);
+  EXPECT_EQ(t->to, State::Normal);
+}

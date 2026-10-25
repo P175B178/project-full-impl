@@ -40,6 +40,9 @@ public:
   void setTemperatureThreshold(float threshold);
   void setHumidityThreshold(float threshold);
 
+  /// Puts the device in `state`, from a command, until the next valid reading decides again.
+  void forceState(State state);
+
   /// React to one read of the sensor: a reading, or the error it reported.
   void process(const std::expected<Reading, SensorError> &result);
 

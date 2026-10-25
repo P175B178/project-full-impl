@@ -80,4 +80,29 @@ std::expected<std::chrono::seconds, std::string> parseInterval(std::string_view 
   return std::chrono::seconds{static_cast<std::int64_t>(value)};
 }
 
+std::expected<State, std::string> parseForcedState(std::string_view payload) {
+  const auto parsed = parseObject(payload);
+  if (!parsed) {
+    return std::unexpected{parsed.error()};
+  }
+  const auto state = parsed->find("state");
+  if (state == parsed->end() || !state->is_string()) {
+    return std::unexpected{R"("state" must be a string)"};
+  }
+  const auto name = state->get<std::string>();
+  if (name == "normal") {
+    return State::Normal;
+  }
+  if (name == "warning") {
+    return State::Warning;
+  }
+  if (name == "alert") {
+    return State::Alert;
+  }
+  if (name == "fault") {
+    return State::Fault;
+  }
+  return std::unexpected{std::format(R"("state" must be normal, warning, alert or fault, not "{}")", name)};
+}
+
 } // namespace warden::mqtt

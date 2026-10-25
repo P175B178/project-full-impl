@@ -11,6 +11,8 @@ std::optional<StateTransition> StateMachine::update(SmoothedReading smoothed) { 
 
 std::optional<StateTransition> StateMachine::fault() { return moveTo(State::Fault); }
 
+std::optional<StateTransition> StateMachine::force(State state) { return moveTo(state); }
+
 std::optional<StateTransition> StateMachine::moveTo(State newState) {
   if (newState == m_state) {
     return std::nullopt;

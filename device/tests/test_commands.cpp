@@ -8,6 +8,7 @@
 #include <chrono>
 #include <string>
 
+using namespace warden;
 using namespace warden::mqtt;
 using namespace warden::test;
 using ::testing::HasSubstr;
@@ -79,4 +80,24 @@ TEST(ParseIntervalTest, RejectsAMissingOrFractionalValue) {
 TEST(ParseIntervalTest, RejectsWhatIsNotAJsonObject) {
   EXPECT_THAT(parseInterval("5").error(), HasSubstr("not a JSON object"));
   EXPECT_THAT(parseInterval("{").error(), HasSubstr("not valid JSON"));
+}
+
+// ── parseForcedState ────────────────────────────────────────────────────────
+
+TEST(ParseForcedStateTest, ReadsTheProtocolsExample) {
+  const auto state = parseForcedState(protocolExample("config-state.json").dump());
+  ASSERT_TRUE(state.has_value()) << state.error();
+  EXPECT_EQ(*state, State::Alert);
+}
+
+TEST(ParseForcedStateTest, ReadsEveryState) {
+  EXPECT_EQ(parseForcedState(R"({"state": "normal"})").value(), State::Normal);
+  EXPECT_EQ(parseForcedState(R"({"state": "warning"})").value(), State::Warning);
+  EXPECT_EQ(parseForcedState(R"({"state": "fault"})").value(), State::Fault);
+}
+
+TEST(ParseForcedStateTest, RejectsAnUnknownOrMissingState) {
+  EXPECT_THAT(parseForcedState(R"({"state": "offline"})").error(), HasSubstr(R"(not "offline")"));
+  EXPECT_THAT(parseForcedState(R"({"color": "red"})").error(), HasSubstr(R"("state" must be a string)"));
+  EXPECT_THAT(parseForcedState("alert").error(), HasSubstr("not valid JSON"));
 }

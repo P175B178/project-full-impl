@@ -39,6 +39,7 @@ void MqttSubscriber::subscribeToCommands(const CommandHandlers &handlers) {
   subscribeTo(m_client, std::format("config/{}/humidity-threshold", m_groupId), parseHumidityThreshold,
               handlers.humidityThreshold);
   subscribeTo(m_client, std::format("config/{}/interval", m_groupId), parseInterval, handlers.interval);
+  subscribeTo(m_client, std::format("config/{}/state", m_groupId), parseForcedState, handlers.state);
 }
 
 } // namespace warden::mqtt

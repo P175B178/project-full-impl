@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "ReadingProcessor.h"
 #include "Reporter.h"
+#include "State.h"
 #include "interfaces/Buzzer.h"
 #include "interfaces/Led.h"
 #include "interfaces/Reading.h"
@@ -50,6 +51,7 @@ public:
   void setTemperatureThreshold(float threshold);
   void setHumidityThreshold(float threshold);
   void setReadInterval(std::chrono::seconds interval);
+  void forceState(State state);
 
 private:
   using SensorResult = std::expected<Reading, SensorError>;
@@ -66,9 +68,17 @@ private:
   struct NewInterval {
     std::chrono::seconds interval;
   };
+  /// A command forced a state until the next valid reading.
+  struct NewForcedState {
+    State state;
+  };
   /// What run() reacts to: a read of the sensor, or a call from another thread.
-  using Event =
-      std::variant<SensorResult, ReportStateAgain, NewTemperatureThreshold, NewHumidityThreshold, NewInterval>;
+  using Event = std::variant<SensorResult,
+                             ReportStateAgain,
+                             NewTemperatureThreshold,
+                             NewHumidityThreshold,
+                             NewInterval,
+                             NewForcedState>;
 
   /// Applies a new read interval, if it is within the config file's limits; logs and ignores it
   /// otherwise.

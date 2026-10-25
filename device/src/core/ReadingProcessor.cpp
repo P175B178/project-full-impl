@@ -117,6 +117,13 @@ void ReadingProcessor::applyThresholds(const Thresholds &thresholds) {
   }
 }
 
+void ReadingProcessor::forceState(State state) {
+  spdlog::info("State {} forced until the next valid reading", toString(state));
+  if (const auto transition = m_stateMachine.force(state)) {
+    reportTransition(*transition);
+  }
+}
+
 void ReadingProcessor::reportTransition(const StateTransition &transition) {
   spdlog::warn("State change: {} -> {}", toString(transition.from), toString(transition.to));
   signalTransition(m_led, m_buzzer, transition);

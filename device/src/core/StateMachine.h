@@ -26,6 +26,8 @@ public:
   [[nodiscard]] std::optional<StateTransition> update(SmoothedReading smoothed);
   /// Enters Fault. The next update() leaves it again.
   [[nodiscard]] std::optional<StateTransition> fault();
+  /// Enters `state`, from a command. The next update() leaves it again.
+  [[nodiscard]] std::optional<StateTransition> force(State state);
   [[nodiscard]] State state() const noexcept { return m_state; }
 
   [[nodiscard]] Thresholds thresholds() const noexcept { return m_thresholds; }

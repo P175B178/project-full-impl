@@ -1,5 +1,7 @@
 #pragma once
 
+#include "State.h"
+
 #include <chrono>
 #include <expected>
 #include <functional>
@@ -21,11 +23,16 @@ namespace warden::mqtt {
 /// number of seconds, required; unknown fields are ignored. The caller checks the limits.
 [[nodiscard]] std::expected<std::chrono::seconds, std::string> parseInterval(std::string_view payload);
 
+/// Parses a forced state command, {"state": "alert"} (see protocol/examples/config-state.json):
+/// normal, warning, alert or fault, required; unknown fields are ignored.
+[[nodiscard]] std::expected<State, std::string> parseForcedState(std::string_view payload);
+
 /// What to do with each valid command. Called on the MQTT client's thread.
 struct CommandHandlers {
   std::function<void(float threshold)> temperatureThreshold;
   std::function<void(float threshold)> humidityThreshold;
   std::function<void(std::chrono::seconds interval)> interval;
+  std::function<void(State state)> state;
 };
 
 } // namespace warden::mqtt

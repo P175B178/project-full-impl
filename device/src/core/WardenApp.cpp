@@ -42,6 +42,7 @@ void WardenApp::run(const std::stop_token &appStopToken) {
             [this](const NewTemperatureThreshold &command) { m_processor.setTemperatureThreshold(command.threshold); },
             [this](const NewHumidityThreshold &command) { m_processor.setHumidityThreshold(command.threshold); },
             [this](const NewInterval &command) { applyReadInterval(command.interval); },
+            [this](const NewForcedState &command) { m_processor.forceState(command.state); },
         },
         *event);
   }
@@ -59,6 +60,8 @@ void WardenApp::setTemperatureThreshold(float threshold) {
 void WardenApp::setHumidityThreshold(float threshold) { m_events.push(NewHumidityThreshold{.threshold = threshold}); }
 
 void WardenApp::setReadInterval(std::chrono::seconds interval) { m_events.push(NewInterval{.interval = interval}); }
+
+void WardenApp::forceState(State state) { m_events.push(NewForcedState{.state = state}); }
 
 void WardenApp::applyReadInterval(std::chrono::seconds interval) {
   if (!isUsableReadInterval(interval)) {

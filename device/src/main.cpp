@@ -111,6 +111,7 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
       .temperatureThreshold = [&app](float threshold) { app.setTemperatureThreshold(threshold); },
       .humidityThreshold    = [&app](float threshold) { app.setHumidityThreshold(threshold); },
       .interval             = [&app](std::chrono::seconds interval) { app.setReadInterval(interval); },
+      .state                = [&app](warden::State state) { app.forceState(state); },
   });
 
   // If warden disappears without disconnecting, the broker tells everyone. It sends the message as

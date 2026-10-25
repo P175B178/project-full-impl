@@ -283,3 +283,35 @@ TEST_F(ReadingProcessorTest, ANewThresholdDuringAFaultWaitsForAValidReading) {
   processor.process(comfortable); // 20 C > 15 C
   EXPECT_EQ(processor.state(), State::Warning);
 }
+
+TEST_F(ReadingProcessorTest, AForcedStateActsLikeARealOne) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
+  EXPECT_CALL(m_buzzer, shortBeep(3));
+  EXPECT_CALL(m_reporter, reportState(State::Alert, ::testing::_));
+  processor.forceState(State::Alert);
+  EXPECT_EQ(processor.state(), State::Alert);
+}
+
+TEST_F(ReadingProcessorTest, AForcedStateLastsUntilTheNextValidReading) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(3)};
+  EXPECT_CALL(m_led, show(LedColor::Orange, LedMode::Steady));
+  processor.forceState(State::Warning);
+  processor.process(readFailure); // not a valid reading
+  EXPECT_EQ(processor.state(), State::Warning);
+  EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
+  processor.process(comfortable);
+  EXPECT_EQ(processor.state(), State::Normal);
+}
+
+TEST_F(ReadingProcessorTest, AnAlertForcedToNormalComesBackWithTheNextReading) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking)).Times(2);
+  EXPECT_CALL(m_buzzer, shortBeep(3)).Times(2);
+  processor.process(hotAndHumid);
+  EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
+  EXPECT_CALL(m_buzzer, longBeep(1));
+  processor.forceState(State::Normal);
+  processor.process(hotAndHumid);
+  EXPECT_EQ(processor.state(), State::Alert);
+}
