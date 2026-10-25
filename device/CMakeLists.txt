@@ -72,6 +72,7 @@ if(ENABLE_HARDWARE)
     add_library(warden_hardware
         src/hardware/buzzer/GpioBuzzer.cpp
         src/hardware/led/StatusLed.cpp
+        src/hardware/led/SysfsLed.cpp
         src/hardware/sensor/Dht22Sensor.cpp
     )
     target_link_libraries(warden_hardware PUBLIC warden_core)
