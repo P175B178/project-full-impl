@@ -48,6 +48,20 @@
       "group": "build",
       "problemMatcher": ["$gcc"]
     },
+    // ── Pi: tools ──
+    {
+      "label": "Pi: SSH",
+      "type": "shell",
+      "command": "tools/pi/connect.sh",
+      "problemMatcher": []
+    },
+    // ── Pi: one-time setup ──
+    {
+      "label": "Pi init: 1. SSH key",
+      "type": "shell",
+      "command": "tools/pi/init/01-setup-ssh.sh",
+      "problemMatcher": []
+    },
     // ── Checks ──
     {
       // All the checks in one task.

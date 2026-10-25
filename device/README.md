@@ -54,6 +54,21 @@ file.
 
 ## Raspberry Pi
 
+### One-time setup
+
+1. Set your Pi's details in `.env`, created from `.env.sample` on the first container start and
+   never committed, then reopen the container (**Dev Containers: Reopen in Container**):
+
+   ```bash
+   PI_HOST=<Pi IP address>
+   PI_USER=<your username on the Pi>
+   PI_PASSWORD=<your Pi password>
+   PI_PORT=22
+   ```
+
+2. Install your SSH key on the Pi: **VS Code task:** `Pi init: 1. SSH key`
+   (`tools/pi/init/01-setup-ssh.sh`).
+
 ### Build
 
 **VS Code task:** `Pi: Build` — debug
@@ -66,6 +81,14 @@ cmake --preset pi-debug && cmake --build --preset pi-debug
 
 ```bash
 cmake --preset pi-release && cmake --build --preset pi-release
+```
+
+### Shell
+
+**VS Code task:** `Pi: SSH`
+
+```bash
+tools/pi/connect.sh
 ```
 
 ---

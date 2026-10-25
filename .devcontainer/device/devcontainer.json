@@ -28,7 +28,19 @@
     }
   },
 
+  // Creates device/.env from the sample if the developer hasn't set one up yet,
+  // before the container starts (runs on the local machine).
+  "initializeCommand": "sh .devcontainer/device/init.sh || .devcontainer\\device\\init.bat || exit 0",
+
   "postCreateCommand": "git config core.hooksPath .githooks",
+
+  // Injects device/.env into the container environment so VS Code server, terminals,
+  // tasks, and launch.json ${env:} variables all see the same values.
+  "runArgs": ["--env-file", "${localWorkspaceFolder}/device/.env"],
+
+  "mounts": [
+    "source=warden-ssh,target=/root/.ssh,type=volume"
+  ],
 
   // Open only device/ — its own .vscode/ (tasks, launch, settings) then applies.
   // The whole repository is still mounted, one level up.
