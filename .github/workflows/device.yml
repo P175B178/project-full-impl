@@ -7,10 +7,10 @@ concurrency:
 on:
   push:
     branches: [main]
-    paths: ['device/**', '.github/workflows/device.yml']
+    paths: ['device/**', 'protocol/**', '.github/workflows/device.yml']
   pull_request:
     branches: [main]
-    paths: ['device/**', '.github/workflows/device.yml']
+    paths: ['device/**', 'protocol/**', '.github/workflows/device.yml']
   # Also lets a run be started by hand: Actions tab, Device, Run workflow.
   workflow_dispatch:
 

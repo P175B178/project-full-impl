@@ -24,9 +24,11 @@ fi
 
 REMOTE_DIR="/home/${PI_USER}/apps/warden/tests"
 REMOTE_TEST_BIN="${REMOTE_DIR}/warden_tests"
-# One test loads config/warden.toml from the source tree, which does not exist
-# on the Pi. Copy the file next to the tests and pass its path instead.
+# Some tests load files from the source tree, which does not exist on the Pi:
+# config/warden.toml and the message examples in ../protocol/examples. Copy them
+# next to the tests and pass their paths instead.
 REMOTE_CFG="${REMOTE_DIR}/warden.toml"
+REMOTE_EXAMPLES="${REMOTE_DIR}/protocol-examples"
 
 SSH_OPTS=(-p "${PORT}" -o StrictHostKeyChecking=accept-new)
 RSYNC_RSH="ssh -p ${PORT} -o StrictHostKeyChecking=accept-new"
@@ -35,7 +37,9 @@ echo "==> Deploying ${LOCAL_TEST_BIN} -> ${PI}:${REMOTE_TEST_BIN}"
 ssh "${SSH_OPTS[@]}" "${PI}" "mkdir -p '${REMOTE_DIR}'"
 rsync -av -e "${RSYNC_RSH}" "${LOCAL_TEST_BIN}" "${PI}:${REMOTE_TEST_BIN}"
 rsync -av -e "${RSYNC_RSH}" config/warden.toml "${PI}:${REMOTE_CFG}"
+rsync -av -e "${RSYNC_RSH}" ../protocol/examples/ "${PI}:${REMOTE_EXAMPLES}/"
 ssh "${SSH_OPTS[@]}" "${PI}" "chmod +x '${REMOTE_TEST_BIN}'"
 
 echo "==> Running tests on ${PI}..."
-exec ssh "${SSH_OPTS[@]}" "${PI}" "WARDEN_CONFIG_FILE='${REMOTE_CFG}' '${REMOTE_TEST_BIN}'"
+exec ssh "${SSH_OPTS[@]}" "${PI}" \
+  "WARDEN_CONFIG_FILE='${REMOTE_CFG}' WARDEN_PROTOCOL_EXAMPLES='${REMOTE_EXAMPLES}' '${REMOTE_TEST_BIN}'"

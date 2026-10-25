@@ -13,6 +13,7 @@ add_executable(warden_tests
     test_averaging.cpp
     test_blocking_queue.cpp
     test_config.cpp
+    test_payloads.cpp
     test_range.cpp
     test_reading_processor.cpp
     test_signal_transition.cpp
@@ -22,12 +23,16 @@ add_executable(warden_tests
 
 target_link_libraries(warden_tests PRIVATE
     warden_core
+    warden_mqtt
+    nlohmann_json::nlohmann_json
     GTest::gtest_main
     GTest::gmock
 )
 
 target_compile_definitions(warden_tests PRIVATE
     WARDEN_CONFIG_FILE="${PROJECT_SOURCE_DIR}/config/warden.toml"
+    # The message examples both programs are tested against
+    WARDEN_PROTOCOL_EXAMPLES="${PROJECT_SOURCE_DIR}/../protocol/examples"
 )
 
 warden_configure_target(warden_tests)

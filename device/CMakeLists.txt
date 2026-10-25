@@ -55,6 +55,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(CLI11)
 
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        v3.12.0
+    GIT_SHALLOW    TRUE
+    FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # System libraries are found through pkg-config.
 find_package(PkgConfig REQUIRED)
 
@@ -92,9 +101,10 @@ pkg_check_modules(MOSQUITTO REQUIRED IMPORTED_TARGET libmosquitto)
 
 add_library(warden_mqtt
     src/mqtt/MosquittoClient.cpp
+    src/mqtt/Payloads.cpp
 )
 target_include_directories(warden_mqtt PUBLIC src/mqtt)
-target_link_libraries(warden_mqtt PUBLIC warden_core PkgConfig::MOSQUITTO)
+target_link_libraries(warden_mqtt PUBLIC warden_core PkgConfig::MOSQUITTO PRIVATE nlohmann_json::nlohmann_json)
 warden_configure_target(warden_mqtt)
 
 # ── Main executable ──
