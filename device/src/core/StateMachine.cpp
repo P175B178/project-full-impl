@@ -7,8 +7,8 @@ namespace warden {
 StateMachine::StateMachine(Thresholds thresholds)
       : m_thresholds{thresholds} {}
 
-std::optional<StateTransition> StateMachine::update(const Reading &reading) {
-  const State newState = evaluate(reading);
+std::optional<StateTransition> StateMachine::update(SmoothedReading smoothed) {
+  const State newState = evaluate(smoothed);
   if (newState == m_state) {
     return std::nullopt;
   }
@@ -18,12 +18,12 @@ std::optional<StateTransition> StateMachine::update(const Reading &reading) {
   return transition;
 }
 
-State StateMachine::evaluate(const Reading &reading) const noexcept {
-  const bool temperatureExceeded = reading.temperature > m_thresholds.temperature;
-  const bool humidityExceeded    = reading.humidity > m_thresholds.humidity;
+State StateMachine::evaluate(SmoothedReading smoothed) const noexcept {
+  const bool temperatureExceeded = smoothed.temperature > m_thresholds.temperature;
+  const bool humidityExceeded    = smoothed.humidity > m_thresholds.humidity;
 
   spdlog::debug("StateMachine: temp={:.1f} (threshold={:.1f}, exceeded={}) hum={:.1f} (threshold={:.1f}, exceeded={})",
-                reading.temperature, m_thresholds.temperature, temperatureExceeded, reading.humidity,
+                smoothed.temperature, m_thresholds.temperature, temperatureExceeded, smoothed.humidity,
                 m_thresholds.humidity, humidityExceeded);
 
   if (temperatureExceeded && humidityExceeded) {

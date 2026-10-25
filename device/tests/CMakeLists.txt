@@ -9,6 +9,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(warden_tests
+    test_averaging.cpp
     test_state_machine.cpp
 )
 
