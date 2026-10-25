@@ -6,11 +6,16 @@
 #include <spdlog/spdlog.h>
 
 #include <chrono>
+#include <cstdlib>
+#include <exception>
 #include <thread>
 
+// Everything except main() is internal to this file.
+namespace {
 using namespace std::chrono_literals;
 
-int main() {
+// ── Entry point ──────────────────────────────────────────────────────────────
+int runApp() {
   constexpr auto readInterval = 5s;
 
   warden::sim::SimulatedSensor sensor;
@@ -54,4 +59,17 @@ int main() {
 
     std::this_thread::sleep_for(readInterval);
   }
+}
+} // namespace
+
+int main() {
+  // Anything that throws ends here, so the process logs the reason and exits instead of aborting.
+  try {
+    return runApp();
+  } catch (const std::exception &err) {
+    spdlog::critical("Fatal error: {}", err.what());
+  } catch (...) {
+    spdlog::critical("Fatal error: unknown exception");
+  }
+  return EXIT_FAILURE;
 }
