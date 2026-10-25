@@ -2,7 +2,10 @@
 
 #include <toml++/toml.hpp>
 
+#include <filesystem>
 #include <format>
+#include <fstream>
+#include <stdexcept>
 
 namespace warden {
 
@@ -20,9 +23,46 @@ bool isTopicLevel(std::string_view level) {
   return !level.empty() && level.find_first_of("/+#") == std::string_view::npos;
 }
 
+/// The CA file that mqtt.ca_file names, made absolute, or empty if none. Relative to the config
+/// file's folder, so the same file works in the dev container and on the Pi. Throws if it is
+/// missing.
+std::string caFileFrom(const toml::table &table, std::string_view configPath) {
+  const auto name = table.at_path("mqtt.ca_file").value_or(std::string{});
+  if (name.empty()) {
+    return "";
+  }
+  const auto file = std::filesystem::path{configPath}.parent_path() / name;
+  if (!std::filesystem::exists(file)) {
+    throw std::invalid_argument{std::format("mqtt.ca_file: {} not found", file.string())};
+  }
+  return std::filesystem::absolute(file).lexically_normal().string();
+}
+
+/// The password in the file that mqtt.password_file names, relative to the config file's folder, or
+/// empty if none. A file of its own, so warden.toml can stay in git. Throws if the file gives no
+/// password.
+std::string passwordFrom(const toml::table &table, std::string_view configPath) {
+  const auto name = table.at_path("mqtt.password_file").value_or(std::string{});
+  if (name.empty()) {
+    return "";
+  }
+  const auto file = std::filesystem::path{configPath}.parent_path() / name;
+  std::ifstream stream{file};
+  std::string password;
+  std::getline(stream, password);
+  if (password.ends_with('\r')) {
+    password.pop_back(); // saved on Windows
+  }
+  if (password.empty()) {
+    throw std::invalid_argument{std::format("mqtt.password_file: no password in {}", file.string())};
+  }
+  return password;
+}
+
 } // namespace
 
 std::expected<Config, std::string> loadConfig(std::string_view path) {
+  // The helpers throw, which keeps the initializer readable; callers only see std::expected.
   try {
     const toml::table table = toml::parse_file(path);
 
@@ -57,10 +97,15 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
             },
         .mqtt =
             {
-                .host     = table.at_path("mqtt.host").value_or(defaults.mqtt.host),
-                .port     = table.at_path("mqtt.port").value_or(defaults.mqtt.port),
-                .groupId  = table.at_path("mqtt.group_id").value_or(defaults.mqtt.groupId),
-                .deviceId = table.at_path("mqtt.device_id").value_or(defaults.mqtt.deviceId),
+                .host             = table.at_path("mqtt.host").value_or(defaults.mqtt.host),
+                .port             = table.at_path("mqtt.port").value_or(defaults.mqtt.port),
+                .tls              = table.at_path("mqtt.tls").value_or(defaults.mqtt.tls),
+                .caFile           = caFileFrom(table, path),
+                .tlsCheckHostname = table.at_path("mqtt.tls_check_hostname").value_or(defaults.mqtt.tlsCheckHostname),
+                .username         = table.at_path("mqtt.username").value_or(defaults.mqtt.username),
+                .password         = passwordFrom(table, path),
+                .groupId          = table.at_path("mqtt.group_id").value_or(defaults.mqtt.groupId),
+                .deviceId         = table.at_path("mqtt.device_id").value_or(defaults.mqtt.deviceId),
             },
     };
 
@@ -114,10 +159,18 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
     if (config.mqtt.port < 1 || config.mqtt.port > maxPort) {
       return std::unexpected{std::format("mqtt.port must be between 1 and {}", maxPort)};
     }
+    if (config.mqtt.username.empty() != config.mqtt.password.empty()) {
+      return std::unexpected{"mqtt.username and mqtt.password_file: set both, or neither for a broker without a login"};
+    }
+    if (!config.mqtt.tls && (!config.mqtt.caFile.empty() || table.at_path("mqtt.tls_check_hostname"))) {
+      return std::unexpected{"mqtt.ca_file and mqtt.tls_check_hostname need mqtt.tls = true"};
+    }
 
     return config;
   } catch (const toml::parse_error &err) {
     return std::unexpected{std::string{err.description()}};
+  } catch (const std::invalid_argument &err) {
+    return std::unexpected{err.what()};
   }
 }
 

@@ -43,7 +43,32 @@ group_id = "group-1"
 # Run only one at a time: both publish on the group's topics.
 #device_id = "group-1-pi5"
 
-# The broker to connect to: by default this computer, as seen from the dev
-# container. From the Pi, use this computer's LAN address.
+# The broker to connect to. Keep ONE of the three sections below and comment out
+# the other two; two at once set the same setting twice, which is an error. Paths
+# are relative to this file's folder.
+
+# ── Your own broker, plain: broker/dev ──
+# By default this computer, as seen from the dev container. From the Pi, use this
+# computer's LAN address.
 host = "host.docker.internal"
 port = 1883
+
+# ── Your own broker, with TLS and a password: broker/dev-tls ──
+#host = "<this computer's LAN address>"
+#port = 8883
+#tls = true
+#ca_file = "../../broker/dev-tls/certs/ca.crt"
+## No ready-made certificate can name your LAN address, so only the host name
+## check is off; the certificate itself is still checked.
+#tls_check_hostname = false
+
+# ── The course broker, at the university: broker/course ──
+#host = "<address given in class>"
+#port = 8883
+#tls = true
+#ca_file = "../../broker/course/certs/ca.crt"
+
+# Your group's login, from Moodle, for the two brokers above that need one. The
+# password goes alone in the file named here, which is in .gitignore.
+#username = "<your group's user>"
+#password_file = "mqtt-password"

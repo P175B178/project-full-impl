@@ -271,3 +271,85 @@ TEST(LoadConfigTest, PortOutOfRangeIsAnError) {
   ASSERT_FALSE(result.has_value());
   EXPECT_THAT(result.error(), HasSubstr("mqtt.port must be between 1 and 65535"));
 }
+
+TEST(LoadConfigTest, ReadsTlsAndTheLogin) {
+  // Files next to the config file: their names are relative to its folder.
+  const auto folder       = std::filesystem::temp_directory_path();
+  const auto caFile       = folder / std::format("warden-ca-{}.crt", std::random_device{}());
+  const auto passwordFile = folder / std::format("warden-password-{}", std::random_device{}());
+  std::ofstream{caFile} << "test CA";
+  std::ofstream{passwordFile} << "secret\n";
+  const TempConfigFile file{std::format(R"([mqtt]
+group_id = "group-1"
+port = 8883
+tls = true
+ca_file = "{}"
+tls_check_hostname = false
+username = "group-1"
+password_file = "{}")",
+                                        caFile.filename().string(), passwordFile.filename().string())};
+  const auto result = loadConfig(file.string());
+  std::filesystem::remove(caFile);
+  std::filesystem::remove(passwordFile);
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_TRUE(result->mqtt.tls);
+  EXPECT_EQ(result->mqtt.caFile, caFile.string()); // made absolute
+  EXPECT_FALSE(result->mqtt.tlsCheckHostname);
+  EXPECT_EQ(result->mqtt.username, "group-1");
+  EXPECT_EQ(result->mqtt.password, "secret");
+}
+
+TEST(LoadConfigTest, PasswordFileSavedOnWindowsGivesThePassword) {
+  const auto passwordFile =
+      std::filesystem::temp_directory_path() / std::format("warden-password-{}", std::random_device{}());
+  std::ofstream{passwordFile} << "secret\r\n";
+  const TempConfigFile file{
+      std::format("[mqtt]\ngroup_id = \"group-1\"\nusername = \"group-1\"\npassword_file = \"{}\"",
+                  passwordFile.filename().string())};
+  const auto result = loadConfig(file.string());
+  std::filesystem::remove(passwordFile);
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_EQ(result->mqtt.password, "secret");
+}
+
+TEST(LoadConfigTest, MissingPasswordFileIsAnError) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\nusername = \"group-1\"\npassword_file = \"no-such-file\""};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("no password in"));
+}
+
+TEST(LoadConfigTest, PlainByDefaultAndChecksTheHostNameWithTls) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\ntls = true"}; // no ca_file: the system's CAs
+  const auto result = loadConfig(file.string());
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_TRUE(result->mqtt.tlsCheckHostname);
+  EXPECT_TRUE(result->mqtt.caFile.empty());
+  EXPECT_TRUE(result->mqtt.username.empty());
+}
+
+TEST(LoadConfigTest, MissingCaFileIsAnError) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\ntls = true\nca_file = \"no-such-ca.crt\""};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("no-such-ca.crt not found"));
+}
+
+TEST(LoadConfigTest, TlsSettingsWithoutTlsAreAnError) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\ntls_check_hostname = false"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("need mqtt.tls = true"));
+}
+
+TEST(LoadConfigTest, UsernameWithoutPasswordIsAnError) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\nusername = \"group-1\""};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("set both, or neither"));
+}
+
+TEST(LoadConfigTest, TwoBrokerSectionsLeftInAreAnError) {
+  const TempConfigFile file{"[mqtt]\nhost = \"192.168.1.20\"\nport = 1883\nhost = \"course.example\"\nport = 8883"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value()); // TOML: a key set twice
+}

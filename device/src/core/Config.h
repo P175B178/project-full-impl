@@ -26,6 +26,22 @@ struct MqttSettings {
   std::string host{"host.docker.internal"};
   int port{1883}; // the standard MQTT port
 
+  /// Encrypt the connection, and check the broker's certificate.
+  bool tls{false};
+  /// The certificate authority (CA) to check the broker's certificate against. A relative path in
+  /// the file is relative to the file's folder; loading makes it absolute. Empty: the system's CAs,
+  /// for a public certificate.
+  std::string caFile;
+  /// Also check that the certificate names the host connected to. Only off for an address no
+  /// ready-made certificate can list, such as your computer's LAN address; the certificate itself
+  /// is still checked.
+  bool tlsCheckHostname{true};
+
+  /// The login, for a broker that requires one; both empty for one that does not.
+  std::string username;
+  /// From the file mqtt.password_file names.
+  std::string password;
+
   /// The last part of your repository's name (group-1 for cpp-2027p-projektas-group-1). Every topic
   /// starts with it. Required.
   std::string groupId;

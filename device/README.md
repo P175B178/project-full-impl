@@ -65,8 +65,20 @@ cp config/warden.toml config/warden.local.toml
 Run the broker on your computer: open the repository in a VS Code window on the host and run the
 task **Broker: Start (dev)** (see [`broker/`](../broker/README.md)).
 
-The broker is set in `warden.toml`, under `[mqtt]`. From the Pi, set `host` to this computer's LAN
-address (`ipconfig` on Windows, `ip addr` on Linux).
+`warden.toml` has one `[mqtt]` section per broker: `broker/dev`, `broker/dev-tls` and the course
+broker. Keep the one you use and comment out the others. From the Pi, set `host` to this computer's
+LAN address (`ipconfig` on Windows, `ip addr` on Linux).
+
+The TLS brokers need your group's login from Moodle: `username` goes in `warden.toml`, the password
+alone in a file that `.gitignore` covers:
+
+```bash
+echo 'your password' > config/mqtt-password
+chmod 600 config/mqtt-password
+```
+
+Then set `password_file = "mqtt-password"`. With the package, put the file next to
+`/etc/warden/warden.toml`.
 
 Set `group_id` to your group's id, such as `group-1`. Run `warden` on the Pi or in the dev
 container, not both at once: the two would publish on the same topics.

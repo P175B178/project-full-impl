@@ -38,8 +38,9 @@ public:
   /// std::runtime_error if libmosquitto refuses it.
   void setWill(const MqttMessage &will);
 
-  /// Starts connecting to the broker, in the background. Throws std::runtime_error only if the
-  /// network thread cannot be started.
+  /// Starts connecting to the broker, in the background: with its login and TLS, if set. Throws
+  /// std::runtime_error if libmosquitto refuses the login or TLS settings, or the network thread
+  /// cannot be started.
   void connect(const MqttSettings &broker);
 
   /// Hands the message to the network thread, which sends it. Drops it while not connected, rather

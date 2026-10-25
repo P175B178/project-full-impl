@@ -136,6 +136,8 @@ package/
 
 # Your own copy of warden.toml (see device/README.md)
 device/config/*.local.toml
+# The group's password, which warden.toml's password_file names
+device/config/mqtt-password
 
 # Environment files
 .env

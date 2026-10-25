@@ -64,6 +64,25 @@ void MosquittoClient::connect(const MqttSettings &broker) {
   m_brokerName = std::format("{}:{}", broker.host, broker.port);
   spdlog::info("Connecting to MQTT broker {}", m_brokerName);
 
+  if (!broker.username.empty()) {
+    if (const int result = mosquitto_username_pw_set(m_handle.get(), broker.username.c_str(), broker.password.c_str());
+        result != MOSQ_ERR_SUCCESS) {
+      throw std::runtime_error{std::format("Cannot set the MQTT login: {}", mosquitto_strerror(result))};
+    }
+  }
+  if (broker.tls) {
+    // The broker's certificate is checked against ca_file, or else against the system's CAs, which
+    // suits a broker with a public certificate.
+    const char *caFile = broker.caFile.empty() ? nullptr : broker.caFile.c_str();
+    const char *caPath = broker.caFile.empty() ? "/etc/ssl/certs" : nullptr;
+    if (const int result = mosquitto_tls_set(m_handle.get(), caFile, caPath, nullptr, nullptr, nullptr);
+        result != MOSQ_ERR_SUCCESS) {
+      throw std::runtime_error{std::format("Cannot set up TLS with {}: {}", broker.caFile, mosquitto_strerror(result))};
+    }
+    // "Insecure" here means only: do not check the host name.
+    mosquitto_tls_insecure_set(m_handle.get(), !broker.tlsCheckHostname);
+  }
+
   // After a failed attempt, wait 1 s before the next one, then twice as long after every further
   // failure, up to 30 s.
   mosquitto_reconnect_delay_set(m_handle.get(), 1, maxReconnectDelaySeconds, /*reconnect_exponential_backoff=*/true);
