@@ -1,3 +1,4 @@
+#include "core/StateMachine.h"
 #include "sim/ConsoleBuzzer.h"
 #include "sim/ConsoleLed.h"
 #include "sim/SimulatedSensor.h"
@@ -10,19 +11,15 @@
 using namespace std::chrono_literals;
 
 int main() {
-  constexpr auto readInterval          = 5s;
-  constexpr float temperatureThreshold = 28.0F;
-  constexpr float humidityThreshold    = 70.0F;
+  constexpr auto readInterval = 5s;
 
   warden::sim::SimulatedSensor sensor;
   warden::sim::ConsoleLed led;
   warden::sim::ConsoleBuzzer buzzer;
+  warden::StateMachine stateMachine{warden::Thresholds{}};
   spdlog::info("Warden starting — simulated sensor");
 
-  // Green while both values are below their thresholds, orange when one is above, red (blinking,
-  // with beeps) when both are.
-  auto color = warden::LedColor::Green;
-  led.show(color, warden::LedMode::Steady);
+  led.show(warden::LedColor::Green, warden::LedMode::Steady);
 
   while (true) {
     const auto result = sensor.read();
@@ -30,28 +27,28 @@ int main() {
     if (!result) {
       spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
     } else {
-      spdlog::info("temp={:.1f} °C  hum={:.1f}%", result->temperature, result->humidity);
+      const auto transition = stateMachine.update(*result);
 
-      const bool hot   = result->temperature > temperatureThreshold;
-      const bool humid = result->humidity > humidityThreshold;
-      auto newColor    = warden::LedColor::Green;
-      if (hot && humid) {
-        newColor = warden::LedColor::Red;
-      } else if (hot || humid) {
-        newColor = warden::LedColor::Orange;
-      }
-
-      if (newColor != color) {
-        if (newColor == warden::LedColor::Red) {
-          led.show(newColor, warden::LedMode::Blinking);
-          buzzer.shortBeep(3U);
-        } else {
-          led.show(newColor, warden::LedMode::Steady);
-          if (color == warden::LedColor::Red) {
-            buzzer.longBeep(1U);
-          }
+      spdlog::info("temp={:.1f} °C  hum={:.1f}%  state={}", result->temperature, result->humidity,
+                   toString(stateMachine.state()));
+      if (transition) {
+        spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
+        switch (transition->to) {
+        case warden::State::Normal:
+          led.show(warden::LedColor::Green, warden::LedMode::Steady);
+          break;
+        case warden::State::Warning:
+          led.show(warden::LedColor::Orange, warden::LedMode::Steady);
+          break;
+        case warden::State::Alert:
+          led.show(warden::LedColor::Red, warden::LedMode::Blinking);
+          break;
         }
-        color = newColor;
+        if (transition->to == warden::State::Alert) {
+          buzzer.shortBeep(3U);
+        } else if (transition->from == warden::State::Alert) {
+          buzzer.longBeep(1U);
+        }
       }
     }
 

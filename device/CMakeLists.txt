@@ -21,7 +21,7 @@ FetchContent_MakeAvailable(spdlog)
 
 # ── Main executable ──
 # main.cpp includes the header-only simulation classes in src/sim.
-add_executable(warden src/main.cpp)
+add_executable(warden src/main.cpp src/core/StateMachine.cpp)
 target_include_directories(warden PRIVATE include)
 target_link_libraries(warden PRIVATE spdlog::spdlog)
 
