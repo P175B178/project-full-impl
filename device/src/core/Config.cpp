@@ -9,10 +9,11 @@ namespace warden {
 namespace {
 
 // The DHT22 needs 2 s between readings; the upper limits catch typos.
-constexpr auto minReadInterval           = std::chrono::seconds{2};
-constexpr auto maxReadInterval           = std::chrono::seconds{3600};
-constexpr std::size_t maxAveragingWindow = 1000;
-constexpr float maxHumidity              = 100.0F; // relative humidity is a percentage
+constexpr auto minReadInterval                 = std::chrono::seconds{2};
+constexpr auto maxReadInterval                 = std::chrono::seconds{3600};
+constexpr std::size_t maxAveragingWindow       = 1000;
+constexpr std::size_t maxFaultAfterFailedReads = 100;
+constexpr float maxHumidity                    = 100.0F; // relative humidity is a percentage
 
 } // namespace
 
@@ -23,7 +24,8 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
     const Config defaults{};
     const Config config{
         .readInterval = std::chrono::seconds{table.at_path("read_interval_s").value_or(defaults.readInterval.count())},
-        .averagingWindow = table.at_path("averaging_window").value_or(defaults.averagingWindow),
+        .averagingWindow       = table.at_path("averaging_window").value_or(defaults.averagingWindow),
+        .faultAfterFailedReads = table.at_path("fault_after_failed_reads").value_or(defaults.faultAfterFailedReads),
 
         .thresholds =
             {
@@ -55,6 +57,10 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
     }
     if (config.averagingWindow == 0 || config.averagingWindow > maxAveragingWindow) {
       return std::unexpected{std::format("averaging_window must be between 1 and {}", maxAveragingWindow)};
+    }
+    if (config.faultAfterFailedReads == 0 || config.faultAfterFailedReads > maxFaultAfterFailedReads) {
+      return std::unexpected{
+          std::format("fault_after_failed_reads must be between 1 and {}", maxFaultAfterFailedReads)};
     }
     if (config.thresholds.humidity < 0.0F || config.thresholds.humidity > maxHumidity) {
       return std::unexpected{std::format("thresholds.humidity must be between 0 and {}", maxHumidity)};

@@ -10,6 +10,7 @@
 #include "interfaces/Reading.h"
 #include "interfaces/Sensor.h"
 
+#include <cstddef>
 #include <expected>
 
 namespace warden {
@@ -32,12 +33,17 @@ public:
   [[nodiscard]] State state() const noexcept { return m_stateMachine.state(); }
 
 private:
+  /// Counts a failed or implausible read; enough in a row mean Fault.
+  void countFailedRead();
+
   Led &m_led;
   Buzzer &m_buzzer;
   PlausibleValues m_plausibleValues;
+  std::size_t m_faultAfterFailedReads;
   StateMachine m_stateMachine;
   AveragingBuffer<float> m_temperatureBuffer;
   AveragingBuffer<float> m_humidityBuffer;
+  std::size_t m_failedReads{0}; ///< Failed or implausible reads in a row
 };
 
 } // namespace warden

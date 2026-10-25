@@ -58,3 +58,10 @@ TEST(AveragingBufferTest, WorksWithIntegerTypes) {
   ASSERT_TRUE(buf.average().has_value());
   EXPECT_EQ(buf.average().value(), 25);
 }
+
+TEST(AveragingBufferTest, ClearEmptiesTheBuffer) {
+  AveragingBuffer<float> buf{3};
+  buf.push(10.0F);
+  buf.clear();
+  EXPECT_FALSE(buf.average().has_value());
+}

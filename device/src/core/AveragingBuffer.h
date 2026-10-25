@@ -26,6 +26,9 @@ public:
     }
   }
 
+  /// Remove all stored values.
+  void clear() noexcept { m_values.clear(); }
+
   /// The mean of the stored values; std::nullopt if there are none.
   [[nodiscard]] std::optional<T> average() const {
     if (m_values.empty()) {

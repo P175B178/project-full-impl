@@ -7,8 +7,11 @@ namespace warden {
 StateMachine::StateMachine(Thresholds thresholds)
       : m_thresholds{thresholds} {}
 
-std::optional<StateTransition> StateMachine::update(SmoothedReading smoothed) {
-  const State newState = evaluate(smoothed);
+std::optional<StateTransition> StateMachine::update(SmoothedReading smoothed) { return moveTo(evaluate(smoothed)); }
+
+std::optional<StateTransition> StateMachine::fault() { return moveTo(State::Fault); }
+
+std::optional<StateTransition> StateMachine::moveTo(State newState) {
   if (newState == m_state) {
     return std::nullopt;
   }

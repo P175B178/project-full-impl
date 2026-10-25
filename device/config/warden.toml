@@ -11,6 +11,10 @@ read_interval_s = 5
 # How many readings to average before evaluating thresholds: 1 to 1000
 averaging_window = 10
 
+# How many failed or implausible readings in a row count as a sensor fault,
+# shown as a steady red LED: 1 to 100
+fault_after_failed_reads = 5
+
 [thresholds]
 # A value strictly greater than its threshold is exceeded:
 # one exceeded value means Warning, both mean Alert.

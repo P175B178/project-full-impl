@@ -49,3 +49,13 @@ TEST_F(SignalTransitionTest, AlertToWarningOrangeSteadyLedOneLongBeep) {
   EXPECT_CALL(m_buzzer, longBeep(1));
   signalTransition(m_led, m_buzzer, {.from = State::Alert, .to = State::Warning});
 }
+
+TEST_F(SignalTransitionTest, FaultSteadyRedLedNoBuzzer) {
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady));
+  signalTransition(m_led, m_buzzer, {.from = State::Normal, .to = State::Fault});
+}
+
+TEST_F(SignalTransitionTest, AlertToFaultSteadyRedLedNoAllClearBeep) {
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady));
+  signalTransition(m_led, m_buzzer, {.from = State::Alert, .to = State::Fault});
+}

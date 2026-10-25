@@ -24,10 +24,13 @@ public:
   explicit StateMachine(Thresholds thresholds);
 
   [[nodiscard]] std::optional<StateTransition> update(SmoothedReading smoothed);
+  /// Enters Fault. The next update() leaves it again.
+  [[nodiscard]] std::optional<StateTransition> fault();
   [[nodiscard]] State state() const noexcept { return m_state; }
 
 private:
   [[nodiscard]] State evaluate(SmoothedReading smoothed) const noexcept;
+  [[nodiscard]] std::optional<StateTransition> moveTo(State newState);
 
   Thresholds m_thresholds;
   State m_state{State::Normal};

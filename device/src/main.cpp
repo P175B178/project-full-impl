@@ -110,6 +110,7 @@ int runApp(int argc, char **argv) {
                config.thresholds.humidity);
   spdlog::info("Read interval: {}s, averaging window: {} readings", config.readInterval.count(),
                config.averagingWindow);
+  spdlog::info("Sensor fault after {} failed reads in a row", config.faultAfterFailedReads);
   spdlog::info("Plausible range: temp [{:.1f}, {:.1f}] °C  hum [{:.1f}, {:.1f}]%",
                config.plausibleValues.temperature.min, config.plausibleValues.temperature.max,
                config.plausibleValues.humidity.min, config.plausibleValues.humidity.max);

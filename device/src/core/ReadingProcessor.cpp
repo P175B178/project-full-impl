@@ -10,6 +10,7 @@ ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, const Config &confi
       : m_led{led}
       , m_buzzer{buzzer}
       , m_plausibleValues{config.plausibleValues}
+      , m_faultAfterFailedReads{config.faultAfterFailedReads}
       , m_stateMachine{config.thresholds}
       , m_temperatureBuffer{config.averagingWindow}
       , m_humidityBuffer{config.averagingWindow} {}
@@ -17,6 +18,7 @@ ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, const Config &confi
 void ReadingProcessor::process(const std::expected<Reading, SensorError> &result) {
   if (!result) {
     spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
+    countFailedRead();
     return;
   }
   const Reading &reading = *result;
@@ -26,8 +28,11 @@ void ReadingProcessor::process(const std::expected<Reading, SensorError> &result
       !m_plausibleValues.humidity.contains(reading.humidity)) {
     spdlog::warn("Reading outside plausible range (temp={:.1f}, hum={:.1f}) — skipping", reading.temperature,
                  reading.humidity);
+    countFailedRead();
     return;
   }
+
+  m_failedReads = 0;
 
   m_temperatureBuffer.push(reading.temperature);
   m_humidityBuffer.push(reading.humidity);
@@ -44,6 +49,25 @@ void ReadingProcessor::process(const std::expected<Reading, SensorError> &result
     spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
     signalTransition(m_led, m_buzzer, *transition);
   }
+}
+
+void ReadingProcessor::countFailedRead() {
+  ++m_failedReads;
+  if (m_failedReads < m_faultAfterFailedReads) {
+    return;
+  }
+  const auto transition = m_stateMachine.fault();
+  if (!transition) {
+    return; // already in Fault
+  }
+
+  // The averages are stale: start afresh with the next valid reading.
+  m_temperatureBuffer.clear();
+  m_humidityBuffer.clear();
+
+  spdlog::error("Sensor fault: {} failed reads in a row", m_failedReads);
+  spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
+  signalTransition(m_led, m_buzzer, *transition);
 }
 
 } // namespace warden

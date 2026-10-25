@@ -49,6 +49,7 @@ TEST(LoadConfigTest, EmptyFileUsesDefaults) {
   const Config defaults{};
   EXPECT_EQ(result->readInterval, defaults.readInterval);
   EXPECT_EQ(result->averagingWindow, defaults.averagingWindow);
+  EXPECT_EQ(result->faultAfterFailedReads, defaults.faultAfterFailedReads);
   EXPECT_FLOAT_EQ(result->thresholds.temperature, defaults.thresholds.temperature);
   EXPECT_FLOAT_EQ(result->thresholds.humidity, defaults.thresholds.humidity);
   EXPECT_FLOAT_EQ(result->plausibleValues.temperature.min, defaults.plausibleValues.temperature.min);
@@ -59,8 +60,9 @@ TEST(LoadConfigTest, EmptyFileUsesDefaults) {
 
 TEST(LoadConfigTest, ReadsAllValues) {
   const TempConfigFile file{R"(
-read_interval_s  = 2
-averaging_window = 4
+read_interval_s          = 2
+averaging_window         = 4
+fault_after_failed_reads = 3
 
 [thresholds]
 temperature = 25.5
@@ -77,6 +79,7 @@ max_humidity    =  95.0
 
   EXPECT_EQ(result->readInterval, std::chrono::seconds{2});
   EXPECT_EQ(result->averagingWindow, 4U);
+  EXPECT_EQ(result->faultAfterFailedReads, 3U);
   EXPECT_FLOAT_EQ(result->thresholds.temperature, 25.5F);
   EXPECT_FLOAT_EQ(result->thresholds.humidity, 60.0F);
   EXPECT_FLOAT_EQ(result->plausibleValues.temperature.min, -10.0F);
@@ -131,6 +134,20 @@ TEST(LoadConfigTest, TooLargeAveragingWindowIsRejected) {
   EXPECT_THAT(result.error(), HasSubstr("averaging_window"));
 }
 
+TEST(LoadConfigTest, ZeroFaultAfterFailedReadsIsRejected) {
+  const TempConfigFile file{"fault_after_failed_reads = 0"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("fault_after_failed_reads"));
+}
+
+TEST(LoadConfigTest, TooLargeFaultAfterFailedReadsIsRejected) {
+  const TempConfigFile file{"fault_after_failed_reads = 101"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("fault_after_failed_reads"));
+}
+
 TEST(LoadConfigTest, HumidityThresholdAbove100IsRejected) {
   const TempConfigFile file{"[thresholds]\nhumidity = 101"};
   const auto result = loadConfig(file.string());
@@ -170,6 +187,7 @@ TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
   const Config defaults;
   EXPECT_EQ(result->readInterval, defaults.readInterval);
   EXPECT_EQ(result->averagingWindow, defaults.averagingWindow);
+  EXPECT_EQ(result->faultAfterFailedReads, defaults.faultAfterFailedReads);
   EXPECT_FLOAT_EQ(result->thresholds.temperature, defaults.thresholds.temperature);
   EXPECT_FLOAT_EQ(result->thresholds.humidity, defaults.thresholds.humidity);
   EXPECT_FLOAT_EQ(result->plausibleValues.temperature.min, defaults.plausibleValues.temperature.min);

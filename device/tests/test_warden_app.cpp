@@ -68,3 +68,18 @@ TEST_F(WardenAppTest, HandsReadingsToTheProcessor) {
 
   app.run(m_stop.get_token());
 }
+
+TEST_F(WardenAppTest, HandsFailedReadsToTheProcessor) {
+  m_config.faultAfterFailedReads = 1;
+  FakeSensor sensor{std::unexpected{SensorError::ReadFailure}};
+  WardenApp app{sensor, m_led, m_buzzer, m_config};
+  const InSequence inOrder;
+  EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady)).WillOnce(InvokeWithoutArgs([this] {
+    m_stop.request_stop();
+  }));
+  EXPECT_CALL(m_led, turnOff());
+  EXPECT_CALL(m_buzzer, turnOff());
+
+  app.run(m_stop.get_token());
+}

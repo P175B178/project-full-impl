@@ -24,8 +24,9 @@ struct PlausibleValues {
 struct Config {
   std::chrono::seconds readInterval{5};
   std::size_t averagingWindow{10};
-  Thresholds thresholds;           ///< [thresholds]
-  PlausibleValues plausibleValues; ///< [plausible_values]
+  std::size_t faultAfterFailedReads{5}; ///< Failed or implausible reads in a row
+  Thresholds thresholds;                ///< [thresholds]
+  PlausibleValues plausibleValues;      ///< [plausible_values]
 };
 
 // NOLINTEND(readability-magic-numbers)
