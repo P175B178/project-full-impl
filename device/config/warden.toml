@@ -1,8 +1,9 @@
 # Warden — Configuration
-# Missing settings fall back to the defaults shown here, and so do misspelled
-# ones and values of the wrong type: that includes a fraction where a whole
-# number is expected, and a negative count. Other values outside the limits
-# given below stop warden from starting.
+# Missing settings fall back to the defaults shown here, except group_id in
+# [mqtt], which must be set; misspelled settings and values of the wrong type
+# fall back too: that includes a fraction where a whole number is expected, and
+# a negative count. Other values outside the limits given below stop warden
+# from starting.
 
 # How often to read the sensor, in seconds: 2 to 3600
 # (the DHT22 needs 2 s between readings)
@@ -33,6 +34,15 @@ min_humidity    =   0.0
 max_humidity    = 100.0
 
 [mqtt]
+# Your group's id: the last part of your repository's name, group-1 for
+# cpp-2027p-projektas-group-1. Every topic starts with it.
+group_id = "group-1"
+
+# Identifies this device in every message. Default: <group_id>-pi5 on the Pi
+# and <group_id>-sim in the simulation, so a message shows which one sent it.
+# Run only one at a time: both publish on the group's topics.
+#device_id = "group-1-pi5"
+
 # The broker to connect to: by default this computer, as seen from the dev
 # container. From the Pi, use this computer's LAN address.
 host = "host.docker.internal"

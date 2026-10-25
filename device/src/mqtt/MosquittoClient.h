@@ -5,6 +5,7 @@
 #include <mosquitto.h>
 
 #include <memory>
+#include <string>
 
 namespace warden::mqtt {
 
@@ -14,7 +15,8 @@ namespace warden::mqtt {
 /// connection is lost.
 class MosquittoClient {
 public:
-  MosquittoClient();
+  /// `clientId` names this client on the broker; it must be unique there.
+  explicit MosquittoClient(const std::string &clientId);
   ~MosquittoClient();
 
   MosquittoClient(const MosquittoClient &)            = delete;

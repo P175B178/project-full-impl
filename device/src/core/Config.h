@@ -25,6 +25,13 @@ struct MqttSettings {
   /// This computer, as seen from the dev container.
   std::string host{"host.docker.internal"};
   int port{1883}; // the standard MQTT port
+
+  /// The last part of your repository's name (group-1 for cpp-2027p-projektas-group-1). Every topic
+  /// starts with it. Required.
+  std::string groupId;
+  /// Identifies this device in every message. Empty: main() uses <groupId>-pi5 on the Pi and
+  /// <groupId>-sim in the simulation, so a message shows which one sent it.
+  std::string deviceId;
 };
 
 /// All runtime configuration: mirrors config/warden.toml, one struct per [section].
@@ -39,8 +46,8 @@ struct Config {
 
 // NOLINTEND(readability-magic-numbers)
 
-/// Loads a TOML config file; missing settings keep the defaults above. Returns an error message for
-/// an unreadable file or a value outside its limits.
+/// Loads a TOML config file; missing settings keep the defaults above, except mqtt.group_id, which
+/// must be set. Returns an error message for an unreadable file or a value outside its limits.
 [[nodiscard]] std::expected<Config, std::string> loadConfig(std::string_view path);
 
 } // namespace warden

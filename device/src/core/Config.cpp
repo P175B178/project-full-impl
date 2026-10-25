@@ -16,6 +16,12 @@ constexpr std::size_t maxFaultAfterFailedReads = 100;
 constexpr float maxHumidity                    = 100.0F; // relative humidity is a percentage
 constexpr int maxPort                          = 65535;
 
+/// Whether `level` can be one level of an MQTT topic: + and # are wildcards, and / separates
+/// levels.
+bool isTopicLevel(std::string_view level) {
+  return !level.empty() && level.find_first_of("/+#") == std::string_view::npos;
+}
+
 } // namespace
 
 std::expected<Config, std::string> loadConfig(std::string_view path) {
@@ -53,8 +59,10 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
             },
         .mqtt =
             {
-                .host = table.at_path("mqtt.host").value_or(defaults.mqtt.host),
-                .port = table.at_path("mqtt.port").value_or(defaults.mqtt.port),
+                .host     = table.at_path("mqtt.host").value_or(defaults.mqtt.host),
+                .port     = table.at_path("mqtt.port").value_or(defaults.mqtt.port),
+                .groupId  = table.at_path("mqtt.group_id").value_or(defaults.mqtt.groupId),
+                .deviceId = table.at_path("mqtt.device_id").value_or(defaults.mqtt.deviceId),
             },
     };
 
@@ -93,6 +101,13 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
     if (!config.plausibleValues.humidity.contains(config.thresholds.humidity)) {
       return std::unexpected{std::format("thresholds.humidity must lie in plausible_values: between {} and {}",
                                          config.plausibleValues.humidity.min, config.plausibleValues.humidity.max)};
+    }
+
+    if (config.mqtt.groupId.empty()) {
+      return std::unexpected{"mqtt.group_id must be set: your group's id, such as group-1"};
+    }
+    if (!isTopicLevel(config.mqtt.groupId)) {
+      return std::unexpected{"mqtt.group_id must not contain /, + or #: it is part of every topic"};
     }
 
     if (config.mqtt.host.empty()) {

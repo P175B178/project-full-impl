@@ -16,15 +16,14 @@ constexpr int keepAliveSeconds = 60;
 
 } // namespace
 
-MosquittoClient::MosquittoClient() {
+MosquittoClient::MosquittoClient(const std::string &clientId) {
   // The library must be set up once per program, before its first use. It is never cleaned up: the
   // program ends with the client anyway.
   static std::once_flag libraryReady;
   std::call_once(libraryReady, [] { mosquitto_lib_init(); });
 
-  // No client id, so the library makes one up; a clean session, so the broker keeps nothing for
-  // this client between connections.
-  m_handle.reset(mosquitto_new(nullptr, /*clean_session=*/true, this));
+  // A clean session: the broker keeps nothing for this client between connections.
+  m_handle.reset(mosquitto_new(clientId.c_str(), /*clean_session=*/true, this));
   if (!m_handle) {
     throw std::runtime_error{"Cannot create an MQTT client: out of memory"};
   }

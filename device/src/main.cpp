@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <exception>
 #include <expected>
+#include <format>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -98,7 +99,7 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
   warden::sim::ConsoleBuzzer buzzer;
 #endif
 
-  warden::mqtt::MosquittoClient mqttClient;
+  warden::mqtt::MosquittoClient mqttClient{config.mqtt.deviceId};
   mqttClient.connect(config.mqtt);
 
   spdlog::info("Running — press Ctrl-C to stop");
@@ -122,7 +123,14 @@ int runApp(int argc, char **argv) {
     spdlog::error("Failed to load config '{}': {}", commandLine->configPath, configResult.error());
     return EXIT_FAILURE;
   }
-  const auto &config = *configResult;
+  auto config = *configResult;
+  if (config.mqtt.deviceId.empty()) {
+#ifdef ENABLE_HARDWARE
+    config.mqtt.deviceId = std::format("{}-pi5", config.mqtt.groupId);
+#else
+    config.mqtt.deviceId = std::format("{}-sim", config.mqtt.groupId);
+#endif
+  }
 
   spdlog::info("Warden {} starting — config: {}", WARDEN_VERSION, commandLine->configPath);
   spdlog::info("Temperature threshold: {:.1f} °C, humidity threshold: {:.1f}%", config.thresholds.temperature,
@@ -130,6 +138,7 @@ int runApp(int argc, char **argv) {
   spdlog::info("Read interval: {}s, averaging window: {} readings", config.readInterval.count(),
                config.averagingWindow);
   spdlog::info("Sensor fault after {} failed reads in a row", config.faultAfterFailedReads);
+  spdlog::info("MQTT: group {}, device {}", config.mqtt.groupId, config.mqtt.deviceId);
   spdlog::info("Plausible range: temp [{:.1f}, {:.1f}] °C  hum [{:.1f}, {:.1f}]%",
                config.plausibleValues.temperature.min, config.plausibleValues.temperature.max,
                config.plausibleValues.humidity.min, config.plausibleValues.humidity.max);

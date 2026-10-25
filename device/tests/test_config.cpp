@@ -42,8 +42,8 @@ private:
 
 } // namespace
 
-TEST(LoadConfigTest, EmptyFileUsesDefaults) {
-  const TempConfigFile file{""};
+TEST(LoadConfigTest, UnsetSettingsUseDefaults) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\""}; // the one setting without a default
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
 
@@ -57,6 +57,7 @@ TEST(LoadConfigTest, EmptyFileUsesDefaults) {
   EXPECT_FLOAT_EQ(result->plausibleValues.temperature.max, defaults.plausibleValues.temperature.max);
   EXPECT_FLOAT_EQ(result->plausibleValues.humidity.min, defaults.plausibleValues.humidity.min);
   EXPECT_FLOAT_EQ(result->plausibleValues.humidity.max, defaults.plausibleValues.humidity.max);
+  EXPECT_EQ(result->mqtt.deviceId, ""); // main() then picks one
 }
 
 TEST(LoadConfigTest, ReadsAllValues) {
@@ -74,6 +75,10 @@ min_temperature = -10.0
 max_temperature =  50.0
 min_humidity    =   5.0
 max_humidity    =  95.0
+
+[mqtt]
+group_id  = "group-7"
+device_id = "group-7-lab"
 )"};
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
@@ -87,6 +92,22 @@ max_humidity    =  95.0
   EXPECT_FLOAT_EQ(result->plausibleValues.temperature.max, 50.0F);
   EXPECT_FLOAT_EQ(result->plausibleValues.humidity.min, 5.0F);
   EXPECT_FLOAT_EQ(result->plausibleValues.humidity.max, 95.0F);
+  EXPECT_EQ(result->mqtt.groupId, "group-7");
+  EXPECT_EQ(result->mqtt.deviceId, "group-7-lab");
+}
+
+TEST(LoadConfigTest, MissingGroupIdIsAnError) {
+  const TempConfigFile file{""};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("mqtt.group_id must be set"));
+}
+
+TEST(LoadConfigTest, GroupIdWithTopicSeparatorIsAnError) {
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group/1\""};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("mqtt.group_id must not contain /, + or #"));
 }
 
 TEST(LoadConfigTest, MissingFileIsAnError) {
@@ -201,7 +222,7 @@ TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
 }
 
 TEST(LoadConfigTest, WholeNumberIsAcceptedForDecimalSetting) {
-  const TempConfigFile file{"[thresholds]\ntemperature = 30"};
+  const TempConfigFile file{"[thresholds]\ntemperature = 30\n[mqtt]\ngroup_id = \"group-1\""};
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
   EXPECT_FLOAT_EQ(result->thresholds.temperature, 30.0F);
@@ -222,7 +243,7 @@ TEST(LoadConfigTest, InfinityIsAnError) {
 }
 
 TEST(LoadConfigTest, ReadsTheBroker) {
-  const TempConfigFile file{"[mqtt]\nhost = \"192.168.1.20\"\nport = 1884"};
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\nhost = \"192.168.1.20\"\nport = 1884"};
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
   EXPECT_EQ(result->mqtt.host, "192.168.1.20");
@@ -230,7 +251,7 @@ TEST(LoadConfigTest, ReadsTheBroker) {
 }
 
 TEST(LoadConfigTest, TheBrokerDefaultsToThisComputer) {
-  const TempConfigFile file{"[mqtt]\n"};
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\n"};
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
   EXPECT_EQ(result->mqtt.host, "host.docker.internal");
@@ -238,14 +259,14 @@ TEST(LoadConfigTest, TheBrokerDefaultsToThisComputer) {
 }
 
 TEST(LoadConfigTest, EmptyHostIsAnError) {
-  const TempConfigFile file{"[mqtt]\nhost = \"\""};
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\nhost = \"\""};
   const auto result = loadConfig(file.string());
   ASSERT_FALSE(result.has_value());
   EXPECT_THAT(result.error(), HasSubstr("mqtt.host must be set"));
 }
 
 TEST(LoadConfigTest, PortOutOfRangeIsAnError) {
-  const TempConfigFile file{"[mqtt]\nport = 70000"};
+  const TempConfigFile file{"[mqtt]\ngroup_id = \"group-1\"\nport = 70000"};
   const auto result = loadConfig(file.string());
   ASSERT_FALSE(result.has_value());
   EXPECT_THAT(result.error(), HasSubstr("mqtt.port must be between 1 and 65535"));

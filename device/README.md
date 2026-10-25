@@ -70,6 +70,9 @@ Start it before `warden`, which stops if it cannot reach the broker.
 The broker is set in `warden.toml`, under `[mqtt]`. From the Pi, set `host` to this computer's LAN
 address (`ipconfig` on Windows, `ip addr` on Linux).
 
+Set `group_id` to your group's id, such as `group-1`. Run `warden` on the Pi or in the dev
+container, not both at once: the two would publish on the same topics.
+
 ---
 
 ## Raspberry Pi
