@@ -116,6 +116,11 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
 
   app.run(stopToken);
 
+  // A clean shutdown disconnects, so the broker sends no Last Will: warden says it is offline
+  // itself, and waits for the broker to confirm it, since the disconnect right after would cut the
+  // message off.
+  mqttClient.publishAndWait(publisher.offlineStatus(std::chrono::system_clock::now()), std::chrono::seconds{2});
+
   // The client calls into app on its network thread, and app is destroyed before mqttClient: so
   // that thread stops here, while app is alive.
   mqttClient.disconnect();

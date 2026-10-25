@@ -32,6 +32,7 @@ MosquittoClient::MosquittoClient(const std::string &clientId) {
   }
   mosquitto_connect_callback_set(m_handle.get(), &MosquittoClient::onConnect);
   mosquitto_disconnect_callback_set(m_handle.get(), &MosquittoClient::onDisconnect);
+  mosquitto_publish_callback_set(m_handle.get(), &MosquittoClient::onPublish);
 }
 
 MosquittoClient::~MosquittoClient() { disconnect(); }
@@ -88,6 +89,42 @@ void MosquittoClient::publish(const MqttMessage &message) {
       result != MOSQ_ERR_SUCCESS) {
     spdlog::error("Cannot publish to {}: {}", message.topic, mosquitto_strerror(result));
   }
+}
+
+void MosquittoClient::publishAndWait(const MqttMessage &message, std::chrono::milliseconds timeout) {
+  if (!m_online) {
+    return;
+  }
+  std::unique_lock lock{m_publishMutex};
+  m_awaitedMessageSent = false;
+  int messageId        = 0;
+  if (const int result =
+          mosquitto_publish(m_handle.get(), &messageId, message.topic.c_str(), static_cast<int>(message.payload.size()),
+                            message.payload.data(), message.qos, message.retained);
+      result != MOSQ_ERR_SUCCESS) {
+    spdlog::error("Cannot publish to {}: {}", message.topic, mosquitto_strerror(result));
+    return;
+  }
+  // The lock is held since before publishing, so onPublish() cannot report the message before it is
+  // awaited.
+  m_awaitedMessageId = messageId;
+  if (!m_published.wait_for(lock, timeout, [this] { return m_awaitedMessageSent; })) {
+    spdlog::warn("The broker did not confirm the message to {} within {} ms", message.topic, timeout.count());
+  }
+  m_awaitedMessageId.reset();
+}
+
+void MosquittoClient::onPublish(mosquitto * /*handle*/, void *self, int messageId) {
+  // Called once a message is sent: for QoS 1, when the broker confirmed it.
+  auto &client = *static_cast<MosquittoClient *>(self);
+  {
+    const std::scoped_lock lock{client.m_publishMutex};
+    if (client.m_awaitedMessageId != messageId) {
+      return;
+    }
+    client.m_awaitedMessageSent = true;
+  }
+  client.m_published.notify_one();
 }
 
 void MosquittoClient::onConnect(mosquitto * /*handle*/, void *self, int result) {

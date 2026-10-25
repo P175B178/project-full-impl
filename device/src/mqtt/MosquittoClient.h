@@ -6,8 +6,12 @@
 #include <mosquitto.h>
 
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <functional>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <string>
 
 namespace warden::mqtt {
@@ -40,6 +44,11 @@ public:
   /// than logging an error for every reading.
   void publish(const MqttMessage &message) override;
 
+  /// Publishes `message` and waits up to `timeout` for the broker to confirm it: for the last
+  /// message, which the disconnect after it could cut off. Logs what went wrong; does nothing while
+  /// not connected.
+  void publishAndWait(const MqttMessage &message, std::chrono::milliseconds timeout);
+
   void setConnectedHandler(std::function<void()> handler) override;
 
   /// Disconnects and stops the network thread: no handler is called after this returns. Call it
@@ -50,6 +59,7 @@ private:
   // libmosquitto calls these on its network thread.
   static void onConnect(mosquitto *handle, void *self, int result);
   static void onDisconnect(mosquitto *handle, void *self, int reason);
+  static void onPublish(mosquitto *handle, void *self, int messageId);
 
   struct HandleDeleter {
     void operator()(mosquitto *handle) const noexcept { mosquitto_destroy(handle); }
@@ -62,6 +72,12 @@ private:
   // Only touched on the network thread:
   bool m_wasOnline{false};        ///< Whether connected before, so a disconnect is a loss
   bool m_reportedNotFound{false}; ///< Whether "cannot reach" was logged since the last connection
+
+  // publishAndWait() waits for the network thread to report its message sent.
+  std::mutex m_publishMutex;
+  std::condition_variable m_published;
+  std::optional<int> m_awaitedMessageId; ///< The message publishAndWait() waits for
+  bool m_awaitedMessageSent{false};
 };
 
 } // namespace warden::mqtt
