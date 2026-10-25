@@ -3,6 +3,7 @@
 #include "Reading.h"
 
 #include <expected>
+#include <string_view>
 
 namespace warden {
 
@@ -25,5 +26,16 @@ public:
 
   [[nodiscard]] virtual std::expected<Reading, SensorError> read() = 0;
 };
+
+/// Name of the error, for logs.
+[[nodiscard]] constexpr std::string_view toString(SensorError error) noexcept {
+  switch (error) {
+  case SensorError::ReadFailure:
+    return "ReadFailure";
+  case SensorError::InvalidData:
+    return "InvalidData";
+  }
+  return "Unknown";
+}
 
 } // namespace warden

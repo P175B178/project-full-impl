@@ -14,7 +14,7 @@
       "problemMatcher": ["$gcc"]
     },
     {
-      "label": "Local: Run",
+      "label": "Local: Run (simulated)",
       "type": "shell",
       "command": "./build/debug/warden",
       "dependsOn": "Local: Build",

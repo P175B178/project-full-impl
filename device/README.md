@@ -19,6 +19,12 @@ paths are relative to it.
 cmake --preset debug && cmake --build --preset debug
 ```
 
+**VS Code task:** `Local: Run (simulated)` — with a simulated sensor
+
+```bash
+./build/debug/warden
+```
+
 **Debug with breakpoints:**
 
 **VS Code launch config:** `Local: Debug` (`F5`) — builds automatically and launches under GDB.
