@@ -4,6 +4,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <chrono>
+
 namespace warden {
 
 ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, Reporter &reporter, const Config &config)
@@ -15,6 +17,11 @@ ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, Reporter &reporter,
       , m_stateMachine{config.thresholds}
       , m_temperatureBuffer{config.averagingWindow}
       , m_humidityBuffer{config.averagingWindow} {}
+
+void ReadingProcessor::start() {
+  m_led.show(LedColor::Green, LedMode::Steady);
+  m_reporter.reportState(m_stateMachine.state(), std::chrono::system_clock::now());
+}
 
 void ReadingProcessor::process(const std::expected<Reading, SensorError> &result) {
   if (!result) {
@@ -48,8 +55,7 @@ void ReadingProcessor::process(const std::expected<Reading, SensorError> &result
   spdlog::info("temp={:.1f} °C (raw={:.1f})  hum={:.1f}% (raw={:.1f})  state={}", smoothed.temperature,
                reading.temperature, smoothed.humidity, reading.humidity, toString(m_stateMachine.state()));
   if (transition) {
-    spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
-    signalTransition(m_led, m_buzzer, *transition);
+    reportTransition(*transition);
   }
 }
 
@@ -68,8 +74,13 @@ void ReadingProcessor::countFailedRead() {
   m_humidityBuffer.clear();
 
   spdlog::error("Sensor fault: {} failed reads in a row", m_failedReads);
-  spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
-  signalTransition(m_led, m_buzzer, *transition);
+  reportTransition(*transition);
+}
+
+void ReadingProcessor::reportTransition(const StateTransition &transition) {
+  spdlog::warn("State change: {} -> {}", toString(transition.from), toString(transition.to));
+  signalTransition(m_led, m_buzzer, transition);
+  m_reporter.reportState(transition.to, std::chrono::system_clock::now());
 }
 
 } // namespace warden

@@ -34,8 +34,8 @@ public:
   WardenApp(WardenApp &&)                 = delete;
   WardenApp &operator=(WardenApp &&)      = delete;
 
-  /// Run the monitoring loop until the stop token is signalled. Sets the LED to green on entry,
-  /// turns LED and buzzer off on exit.
+  /// Run the monitoring loop until the stop token is signalled. Shows and reports the starting
+  /// state on entry, turns LED and buzzer off on exit.
   void run(const std::stop_token &stopToken);
 
 private:

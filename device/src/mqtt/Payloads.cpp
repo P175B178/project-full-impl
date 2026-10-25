@@ -14,6 +14,21 @@ std::string isoTimestamp(std::chrono::system_clock::time_point time) {
   return std::format("{:%Y-%m-%dT%H:%M:%SZ}", std::chrono::floor<std::chrono::seconds>(time));
 }
 
+/// The state as the protocol names it.
+constexpr std::string_view protocolName(State state) {
+  switch (state) {
+  case State::Normal:
+    return "normal";
+  case State::Warning:
+    return "warning";
+  case State::Alert:
+    return "alert";
+  case State::Fault:
+    return "fault";
+  }
+  return "unknown";
+}
+
 /// A float as JSON shows it with every digit of the nearest double: 23.4F would be
 /// 23.399999618530273. One decimal is what the sensor resolves.
 double oneDecimal(float value) {
@@ -47,6 +62,15 @@ std::string humidityObservation(std::string_view deviceId, float value, std::chr
        {{"value", oneDecimal(value)}, {"unit", "%"}, {"system", "http://unitsofmeasure.org"}, {"code", "%"}}},
   };
   return observation.dump();
+}
+
+std::string statusPayload(std::string_view deviceId, State state, std::chrono::system_clock::time_point time) {
+  const nlohmann::json status{
+      {"deviceId", deviceId},
+      {"state", protocolName(state)},
+      {"timestamp", isoTimestamp(time)},
+  };
+  return status.dump();
 }
 
 } // namespace warden::mqtt

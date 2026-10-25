@@ -2,6 +2,7 @@
 
 #include "MqttClient.h"
 #include "Reporter.h"
+#include "State.h"
 #include "StateMachine.h"
 
 #include <chrono>
@@ -25,6 +26,11 @@ public:
   /// sensors/<group-id>/temperature and sensors/<group-id>/humidity. Sent once and not retained: a
   /// newer reading follows soon anyway.
   void reportReading(const SmoothedReading &reading, std::chrono::system_clock::time_point time) override;
+
+  /// Publishes the device's state on sensors/<group-id>/status. Retained, so whoever subscribes
+  /// later learns the current state at once, and sent until the broker confirms it, since the next
+  /// one may be a long time away.
+  void reportState(State state, std::chrono::system_clock::time_point time) override;
 
 private:
   MqttClient &m_client;

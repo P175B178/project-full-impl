@@ -1,5 +1,7 @@
 #pragma once
 
+#include "State.h"
+
 #include <chrono>
 #include <string>
 #include <string_view>
@@ -15,5 +17,10 @@ temperatureObservation(std::string_view deviceId, float value, std::chrono::syst
 /// The same for humidity (see protocol/examples/observation-humidity.json).
 [[nodiscard]] std::string
 humidityObservation(std::string_view deviceId, float value, std::chrono::system_clock::time_point time);
+
+/// The JSON message for the device's state: {"deviceId", "state", "timestamp"}, as specified in
+/// protocol/ (see protocol/examples/status-*.json).
+[[nodiscard]] std::string
+statusPayload(std::string_view deviceId, State state, std::chrono::system_clock::time_point time);
 
 } // namespace warden::mqtt

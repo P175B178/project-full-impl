@@ -206,3 +206,25 @@ TEST_F(ReadingProcessorTest, ReportsNothingForASkippedReading) {
   processor.process(readFailure);
   processor.process(implausible);
 }
+
+TEST_F(ReadingProcessorTest, StartShowsGreenAndReportsNormal) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
+  EXPECT_CALL(m_reporter, reportState(State::Normal, ::testing::_));
+  processor.start();
+}
+
+TEST_F(ReadingProcessorTest, ReportsEveryStateChange) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
+  EXPECT_CALL(m_buzzer, shortBeep(3));
+  EXPECT_CALL(m_reporter, reportState(State::Alert, ::testing::_));
+  processor.process(hotAndHumid);
+}
+
+TEST_F(ReadingProcessorTest, ReportsTheFault) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(1)};
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady));
+  EXPECT_CALL(m_reporter, reportState(State::Fault, ::testing::_));
+  processor.process(readFailure);
+}

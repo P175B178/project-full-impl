@@ -15,7 +15,7 @@ WardenApp::WardenApp(Sensor &sensor, Led &led, Buzzer &buzzer, Reporter &reporte
       , m_processor{led, buzzer, reporter, config} {}
 
 void WardenApp::run(const std::stop_token &appStopToken) {
-  m_led.show(LedColor::Green, LedMode::Steady);
+  m_processor.start();
 
   // The jthread destructor requests stop and joins the thread when run() returns.
   auto sensorThreadFn = [this](const std::stop_token &threadStopToken) { sensorLoop(threadStopToken); };

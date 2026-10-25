@@ -12,6 +12,7 @@ public:
               reportReading,
               (const SmoothedReading &reading, std::chrono::system_clock::time_point time),
               (override));
+  MOCK_METHOD(void, reportState, (State state, std::chrono::system_clock::time_point time), (override));
 };
 
 } // namespace warden::test

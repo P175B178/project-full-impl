@@ -19,4 +19,11 @@ void MqttPublisher::reportReading(const SmoothedReading &reading, std::chrono::s
                     .payload = humidityObservation(m_deviceId, reading.humidity, time)});
 }
 
+void MqttPublisher::reportState(State state, std::chrono::system_clock::time_point time) {
+  m_client.publish({.topic    = std::format("sensors/{}/status", m_groupId),
+                    .payload  = statusPayload(m_deviceId, state, time),
+                    .qos      = 1,
+                    .retained = true});
+}
+
 } // namespace warden::mqtt

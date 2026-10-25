@@ -1,5 +1,6 @@
 #pragma once
 
+#include "State.h"
 #include "StateMachine.h"
 
 #include <chrono>
@@ -18,6 +19,9 @@ public:
 
   /// Reports the averaged temperature and humidity, read at `time`.
   virtual void reportReading(const SmoothedReading &reading, std::chrono::system_clock::time_point time) = 0;
+
+  /// Reports the state warden is in, entered at `time`.
+  virtual void reportState(State state, std::chrono::system_clock::time_point time) = 0;
 };
 
 } // namespace warden

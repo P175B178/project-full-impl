@@ -7,6 +7,7 @@
 
 #include <chrono>
 
+using namespace warden;
 using namespace warden::mqtt;
 using warden::test::protocolExample;
 
@@ -39,4 +40,19 @@ TEST(PayloadsTest, TimeIsUtcToTheSecond) {
   const auto payload =
       nlohmann::json::parse(humidityObservation("d", 50.0F, exampleTime + std::chrono::milliseconds{999}));
   EXPECT_EQ(payload["effectiveDateTime"], "2026-01-02T03:04:05Z");
+}
+
+TEST(PayloadsTest, NormalStatusMatchesTheProtocol) {
+  const auto payload = statusPayload("group-1-pi5", State::Normal, exampleTime);
+  EXPECT_EQ(nlohmann::json::parse(payload), protocolExample("status-normal.json"));
+}
+
+TEST(PayloadsTest, FaultStatusMatchesTheProtocol) {
+  const auto payload = statusPayload("group-1-pi5", State::Fault, exampleTime);
+  EXPECT_EQ(nlohmann::json::parse(payload), protocolExample("status-fault.json"));
+}
+
+TEST(PayloadsTest, StatusNamesEveryState) {
+  EXPECT_EQ(nlohmann::json::parse(statusPayload("d", State::Warning, exampleTime))["state"], "warning");
+  EXPECT_EQ(nlohmann::json::parse(statusPayload("d", State::Alert, exampleTime))["state"], "alert");
 }

@@ -28,6 +28,9 @@ public:
   ReadingProcessor(ReadingProcessor &&)                 = delete;
   ReadingProcessor &operator=(ReadingProcessor &&)      = delete;
 
+  /// Shows the state it starts in, Normal, on the LED, and reports it.
+  void start();
+
   /// React to one read of the sensor: a reading, or the error it reported.
   void process(const std::expected<Reading, SensorError> &result);
 
@@ -36,6 +39,9 @@ public:
 private:
   /// Counts a failed or implausible read; enough in a row mean Fault.
   void countFailedRead();
+
+  /// Logs a state change, shows it on the LED and buzzer, and reports it.
+  void reportTransition(const StateTransition &transition);
 
   Led &m_led;
   Buzzer &m_buzzer;
