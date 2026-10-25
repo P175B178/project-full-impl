@@ -1,7 +1,5 @@
-#include "core/AveragingBuffer.h"
 #include "core/Config.h"
-#include "core/SignalTransition.h"
-#include "core/StateMachine.h"
+#include "core/ReadingProcessor.h"
 #include "sim/ConsoleBuzzer.h"
 #include "sim/ConsoleLed.h"
 #include "sim/SimulatedSensor.h"
@@ -109,9 +107,7 @@ int runApp(int argc, char **argv) {
   warden::sim::SimulatedSensor sensor;
   warden::sim::ConsoleLed led;
   warden::sim::ConsoleBuzzer buzzer;
-  warden::StateMachine stateMachine{config.thresholds};
-  warden::AveragingBuffer<float> temperatureBuffer{config.averagingWindow};
-  warden::AveragingBuffer<float> humidityBuffer{config.averagingWindow};
+  warden::ReadingProcessor processor{led, buzzer, config};
   spdlog::info("Running — press Ctrl-C to stop");
 
   led.show(warden::LedColor::Green, warden::LedMode::Steady);
@@ -126,28 +122,8 @@ int runApp(int argc, char **argv) {
 
     if (!result) {
       spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
-    } else if (!config.plausibleValues.temperature.contains(result->temperature) ||
-               !config.plausibleValues.humidity.contains(result->humidity)) {
-      // Values the sensor can produce but that are implausible for this site, as configured in
-      // [plausible_values], are skipped.
-      spdlog::warn("Reading outside plausible range (temp={:.1f}, hum={:.1f}) — skipping", result->temperature,
-                   result->humidity);
     } else {
-      temperatureBuffer.push(result->temperature);
-      humidityBuffer.push(result->humidity);
-
-      // Never empty right after push(): value_or() only avoids an unchecked access.
-      const warden::SmoothedReading smoothed{.temperature = temperatureBuffer.average().value_or(result->temperature),
-                                             .humidity    = humidityBuffer.average().value_or(result->humidity)};
-
-      const auto transition = stateMachine.update(smoothed);
-
-      spdlog::info("temp={:.1f} °C (raw={:.1f})  hum={:.1f}% (raw={:.1f})  state={}", smoothed.temperature,
-                   result->temperature, smoothed.humidity, result->humidity, toString(stateMachine.state()));
-      if (transition) {
-        spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
-        warden::signalTransition(led, buzzer, *transition);
-      }
+      processor.process(*result);
     }
 
     // Sleeps after failed reads too, so broken hardware is not hammered.

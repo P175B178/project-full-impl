@@ -57,6 +57,7 @@ FetchContent_MakeAvailable(CLI11)
 # ── Core library (no hardware deps, testable on host) ──
 add_library(warden_core
     src/core/Config.cpp
+    src/core/ReadingProcessor.cpp
     src/core/StateMachine.cpp
 )
 # Public, because other targets include these headers.

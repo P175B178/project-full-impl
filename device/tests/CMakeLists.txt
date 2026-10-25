@@ -12,6 +12,7 @@ add_executable(warden_tests
     test_averaging.cpp
     test_config.cpp
     test_range.cpp
+    test_reading_processor.cpp
     test_signal_transition.cpp
     test_state_machine.cpp
 )
