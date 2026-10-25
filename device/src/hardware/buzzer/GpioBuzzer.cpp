@@ -32,31 +32,47 @@ GpioBuzzer::~GpioBuzzer() { turnOff(); }
 
 void GpioBuzzer::turnOff() {
   spdlog::debug("GpioBuzzer: turnOff");
+  stopBeeping();
   m_pin.setLow();
 }
 
 void GpioBuzzer::shortBeep(unsigned int count) {
   spdlog::debug("GpioBuzzer: {} short beep(s)", count);
-  beep(shortBeepDuration, count);
+  startBeeping(shortBeepDuration, count);
 }
 
 void GpioBuzzer::longBeep(unsigned int count) {
   spdlog::debug("GpioBuzzer: {} long beep(s)", count);
-  beep(longBeepDuration, count);
+  startBeeping(longBeepDuration, count);
 }
 
-void GpioBuzzer::beep(std::chrono::milliseconds duration, unsigned int count) {
-  for (auto beepIdx : std::views::iota(0U, count)) {
-    emitTone(duration);
-    if (beepIdx + 1 < count) {
-      std::this_thread::sleep_for(shortBeepPause);
+void GpioBuzzer::startBeeping(std::chrono::milliseconds duration, unsigned int count) {
+  // Stop the beep that is playing first, so only one thread drives the pin.
+  stopBeeping();
+  m_beepThread = std::jthread{[this, duration, count](const std::stop_token &stop) {
+    for (auto beepIdx : std::views::iota(0U, count)) {
+      if (stop.stop_requested()) {
+        break;
+      }
+      emitTone(duration, stop);
+      if (beepIdx + 1 < count) {
+        // A plain sleep: stopping waits for at most this 100 ms pause.
+        std::this_thread::sleep_for(shortBeepPause);
+      }
     }
+  }};
+}
+
+void GpioBuzzer::stopBeeping() {
+  if (m_beepThread.joinable()) {
+    m_beepThread.request_stop();
+    m_beepThread.join();
   }
 }
 
-void GpioBuzzer::emitTone(std::chrono::milliseconds duration) {
+void GpioBuzzer::emitTone(std::chrono::milliseconds duration, const std::stop_token &stop) {
   const auto end = std::chrono::steady_clock::now() + duration;
-  while (std::chrono::steady_clock::now() < end) {
+  while (!stop.stop_requested() && std::chrono::steady_clock::now() < end) {
     m_pin.setHigh();
     std::this_thread::sleep_for(tonePeriod / 2);
     m_pin.setLow();
