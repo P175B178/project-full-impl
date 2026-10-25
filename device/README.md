@@ -1,6 +1,7 @@
-# Device
+# Warden
 
-The program that runs on the Raspberry Pi.
+Monitors temperature and humidity via a DHT22 sensor on a Raspberry Pi, and
+signals the state through the Pi's built-in LEDs and a buzzer.
 
 Everything below runs in the **Device** dev container, which opens this folder, `device/`: all
 paths are relative to it.

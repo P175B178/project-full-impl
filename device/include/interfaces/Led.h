@@ -1,5 +1,7 @@
 #pragma once
 
+namespace warden {
+
 enum class LedColor { Green, Orange, Red };
 
 /// An enum rather than a bool, so a call reads led.show(color, LedMode::Blinking).
@@ -11,3 +13,5 @@ public:
   virtual void show(LedColor color, LedMode mode) = 0;
   virtual void turnOff()                          = 0;
 };
+
+} // namespace warden

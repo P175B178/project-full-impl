@@ -1,6 +1,6 @@
 #include <cstdio>
 
 int main() {
-  std::puts("Hello from the device!");
+  std::puts("Warden starting...");
   return 0;
 }
