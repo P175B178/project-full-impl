@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+# On removal, stops warden and no longer starts it at boot.
+if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then
+  systemctl disable --now warden.service
+fi

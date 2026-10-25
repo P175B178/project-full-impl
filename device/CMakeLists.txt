@@ -124,13 +124,15 @@ if(ENABLE_HARDWARE)
 endif()
 
 # ── Install rules ──
-# Relative to the root of the target filesystem, so it installs /usr/bin/warden
-# and /etc/warden/warden.toml. For that, the install prefix defaults to /.
+# Relative to the root of the target filesystem, so it installs /usr/bin/warden,
+# /etc/warden/warden.toml and the systemd service. For that, the install prefix
+# defaults to /.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/" CACHE PATH "Install path prefix" FORCE)
 endif()
 install(TARGETS warden RUNTIME DESTINATION usr/bin)
 install(FILES config/warden.toml DESTINATION etc/warden)
+install(FILES packaging/warden.service DESTINATION usr/lib/systemd/system)
 
 # ── Packaging (CPack) ──
 # The archive name gets the target CPU: warden-1.0.0-aarch64 for the Pi.
@@ -155,7 +157,12 @@ if(ENABLE_HARDWARE)
         "Monitors temperature and humidity via DHT22 on a Raspberry Pi.\n Signals state through built-in LEDs and a buzzer.")
     # A conffile, so upgrading the package keeps local edits.
     file(WRITE "${PROJECT_BINARY_DIR}/conffiles" "/etc/warden/warden.toml\n")
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_BINARY_DIR}/conffiles")
+    # postinst and prerm enable and start the service, and stop it on removal.
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+        "${PROJECT_BINARY_DIR}/conffiles"
+        "${PROJECT_SOURCE_DIR}/packaging/postinst"
+        "${PROJECT_SOURCE_DIR}/packaging/prerm")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
 endif()
 
 include(CPack)

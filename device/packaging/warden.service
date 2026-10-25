@@ -1,0 +1,14 @@
+[Unit]
+Description=Warden temperature and humidity monitor
+
+[Service]
+ExecStart=/usr/bin/warden
+# Root, to write the LEDs in /sys/class/leds: the udev rule that lets a user do it comes from the
+# bootstrap script, not from this package.
+User=root
+# After a crash, but not after an error such as a bad config, which would only fail again.
+Restart=on-abnormal
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

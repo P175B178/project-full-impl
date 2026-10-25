@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+# Starts warden now and at every boot; an upgrade restarts it with the new version.
+if [ "$1" = "configure" ] && [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  systemctl enable warden.service
+  systemctl restart warden.service
+fi

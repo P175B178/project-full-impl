@@ -183,6 +183,15 @@ sudo apt install ./warden_1.0.0_arm64.deb                 # on the Pi
 It installs `/usr/bin/warden` and its config, `/etc/warden/warden.toml`; upgrading keeps your
 changes to the config.
 
+It also installs a systemd service, which starts `warden` at once and at every boot:
+
+```bash
+sudo systemctl restart warden   # after editing /etc/warden/warden.toml
+systemctl status warden         # running, or why it stopped
+journalctl -u warden -f         # its log
+sudo systemctl stop warden      # before running warden from the dev container
+```
+
 CI builds the package too: download the `.deb` from the run's summary page on GitHub.
 
 ---
