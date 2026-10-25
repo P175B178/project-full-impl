@@ -64,6 +64,7 @@ private:
   static void onConnect(mosquitto *handle, void *self, int result);
   static void onDisconnect(mosquitto *handle, void *self, int reason);
   static void onMessage(mosquitto *handle, void *self, const mosquitto_message *message);
+  static void onLog(mosquitto *handle, void *self, int level, const char *text);
   static void onPublish(mosquitto *handle, void *self, int messageId);
 
   struct HandleDeleter {

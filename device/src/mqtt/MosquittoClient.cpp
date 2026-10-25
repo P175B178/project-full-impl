@@ -33,6 +33,7 @@ MosquittoClient::MosquittoClient(const std::string &clientId) {
   mosquitto_connect_callback_set(m_handle.get(), &MosquittoClient::onConnect);
   mosquitto_disconnect_callback_set(m_handle.get(), &MosquittoClient::onDisconnect);
   mosquitto_message_callback_set(m_handle.get(), &MosquittoClient::onMessage);
+  mosquitto_log_callback_set(m_handle.get(), &MosquittoClient::onLog);
   mosquitto_publish_callback_set(m_handle.get(), &MosquittoClient::onPublish);
 }
 
@@ -190,6 +191,14 @@ void MosquittoClient::onDisconnect(mosquitto * /*handle*/, void *self, int reaso
   } else if (!client.m_reportedNotFound) {
     spdlog::warn("Cannot reach MQTT broker {}; trying again in the background", client.m_brokerName);
     client.m_reportedNotFound = true;
+  }
+}
+
+void MosquittoClient::onLog(mosquitto * /*handle*/, void * /*self*/, int level, const char *text) {
+  // libmosquitto explains failures, such as a certificate that does not check out, only in its own
+  // log; its errors go into warden's.
+  if (level == MOSQ_LOG_ERR) {
+    spdlog::error("MQTT: {}", text);
   }
 }
 
