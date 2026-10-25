@@ -69,6 +69,9 @@ file.
 2. Install your SSH key on the Pi: **VS Code task:** `Pi init: 1. SSH key`
    (`tools/pi/init/01-setup-ssh.sh`).
 
+3. Set up what `warden` needs on the Pi (safe to run again): **VS Code task:**
+   `Pi init: 2. Bootstrap` (`tools/pi/init/02-bootstrap.sh`).
+
 ### Build
 
 **VS Code task:** `Pi: Build` — debug
@@ -81,6 +84,23 @@ cmake --preset pi-debug && cmake --build --preset pi-debug
 
 ```bash
 cmake --preset pi-release && cmake --build --preset pi-release
+```
+
+### Deploy and run
+
+**VS Code task:** `Pi: Run` — builds, deploys and runs
+
+```bash
+cmake --preset pi-debug && cmake --build --preset pi-debug
+tools/pi/deploy.sh
+tools/pi/run.sh   # Ctrl+C stops it; or: tools/pi/run.sh <config file on the Pi>
+```
+
+**VS Code task:** `Pi: Deploy` — without building
+
+```bash
+tools/pi/deploy.sh                           # build/pi-debug/warden
+tools/pi/deploy.sh build/pi-release/warden   # or the release build
 ```
 
 ### Shell

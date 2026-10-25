@@ -48,6 +48,20 @@
       "group": "build",
       "problemMatcher": ["$gcc"]
     },
+    {
+      "label": "Pi: Deploy",
+      "type": "shell",
+      "command": "tools/pi/deploy.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: Run",
+      "type": "shell",
+      "command": "tools/pi/run.sh",
+      "dependsOn": ["Pi: Build", "Pi: Deploy"],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
     // ── Pi: tools ──
     {
       "label": "Pi: SSH",
@@ -60,6 +74,12 @@
       "label": "Pi init: 1. SSH key",
       "type": "shell",
       "command": "tools/pi/init/01-setup-ssh.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi init: 2. Bootstrap",
+      "type": "shell",
+      "command": "tools/pi/init/02-bootstrap.sh",
       "problemMatcher": []
     },
     // ── Checks ──
