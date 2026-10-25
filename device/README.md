@@ -50,6 +50,14 @@ given with `-c`/`--config` (`--help` lists all options). `config/warden.toml` do
 setting. A misspelled setting falls back to its default, so check the startup log after editing the
 file.
 
+For your own settings, such as your computer's LAN address, copy it to a name ending in
+`.local.toml`, which `.gitignore` covers:
+
+```bash
+cp config/warden.toml config/warden.local.toml
+./build/debug/warden -c config/warden.local.toml
+```
+
 ---
 
 ## MQTT broker
@@ -59,8 +67,8 @@ task **Broker: Start (dev)** (see [`broker/`](../broker/README.md)).
 
 Start it before `warden`, which stops if it cannot reach the broker.
 
-The broker's address is fixed to `host.docker.internal`, this computer as seen from the dev
-container, so `warden` runs only there.
+The broker is set in `warden.toml`, under `[mqtt]`. From the Pi, set `host` to this computer's LAN
+address (`ipconfig` on Windows, `ip addr` on Linux).
 
 ---
 

@@ -98,9 +98,8 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
   warden::sim::ConsoleBuzzer buzzer;
 #endif
 
-  // The broker on this computer, as seen from the dev container.
   warden::mqtt::MosquittoClient mqttClient;
-  mqttClient.connect({.host = "host.docker.internal"});
+  mqttClient.connect(config.mqtt);
 
   spdlog::info("Running — press Ctrl-C to stop");
 

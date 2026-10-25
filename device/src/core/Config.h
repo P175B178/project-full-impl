@@ -20,9 +20,10 @@ struct PlausibleValues {
   Range humidity{.min = 0.0F, .max = 100.0F};
 };
 
-/// The broker to connect to.
+/// The broker to connect to, and who this device is on it.
 struct MqttSettings {
-  std::string host;
+  /// This computer, as seen from the dev container.
+  std::string host{"host.docker.internal"};
   int port{1883}; // the standard MQTT port
 };
 
@@ -33,6 +34,7 @@ struct Config {
   std::size_t faultAfterFailedReads{5}; ///< Failed or implausible reads in a row
   Thresholds thresholds;                ///< [thresholds]
   PlausibleValues plausibleValues;      ///< [plausible_values]
+  MqttSettings mqtt;                    ///< [mqtt]
 };
 
 // NOLINTEND(readability-magic-numbers)

@@ -14,6 +14,7 @@ constexpr auto maxReadInterval                 = std::chrono::seconds{3600};
 constexpr std::size_t maxAveragingWindow       = 1000;
 constexpr std::size_t maxFaultAfterFailedReads = 100;
 constexpr float maxHumidity                    = 100.0F; // relative humidity is a percentage
+constexpr int maxPort                          = 65535;
 
 } // namespace
 
@@ -22,7 +23,8 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
     const toml::table table = toml::parse_file(path);
 
     const Config defaults{};
-    const Config config{
+    // Not const, so the return below can move it instead of copying.
+    Config config{
         .readInterval = std::chrono::seconds{table.at_path("read_interval_s").value_or(defaults.readInterval.count())},
         .averagingWindow       = table.at_path("averaging_window").value_or(defaults.averagingWindow),
         .faultAfterFailedReads = table.at_path("fault_after_failed_reads").value_or(defaults.faultAfterFailedReads),
@@ -48,6 +50,11 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
                         .max = table.at_path("plausible_values.max_humidity")
                                    .value_or(defaults.plausibleValues.humidity.max),
                     },
+            },
+        .mqtt =
+            {
+                .host = table.at_path("mqtt.host").value_or(defaults.mqtt.host),
+                .port = table.at_path("mqtt.port").value_or(defaults.mqtt.port),
             },
     };
 
@@ -86,6 +93,13 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
     if (!config.plausibleValues.humidity.contains(config.thresholds.humidity)) {
       return std::unexpected{std::format("thresholds.humidity must lie in plausible_values: between {} and {}",
                                          config.plausibleValues.humidity.min, config.plausibleValues.humidity.max)};
+    }
+
+    if (config.mqtt.host.empty()) {
+      return std::unexpected{"mqtt.host must be set"};
+    }
+    if (config.mqtt.port < 1 || config.mqtt.port > maxPort) {
+      return std::unexpected{std::format("mqtt.port must be between 1 and {}", maxPort)};
     }
 
     return config;

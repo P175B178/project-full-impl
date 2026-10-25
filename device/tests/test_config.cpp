@@ -196,6 +196,8 @@ TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
   EXPECT_FLOAT_EQ(result->plausibleValues.temperature.max, defaults.plausibleValues.temperature.max);
   EXPECT_FLOAT_EQ(result->plausibleValues.humidity.min, defaults.plausibleValues.humidity.min);
   EXPECT_FLOAT_EQ(result->plausibleValues.humidity.max, defaults.plausibleValues.humidity.max);
+  EXPECT_EQ(result->mqtt.host, defaults.mqtt.host);
+  EXPECT_EQ(result->mqtt.port, defaults.mqtt.port);
 }
 
 TEST(LoadConfigTest, WholeNumberIsAcceptedForDecimalSetting) {
@@ -217,4 +219,34 @@ TEST(LoadConfigTest, InfinityIsAnError) {
   const auto result = loadConfig(file.string());
   ASSERT_FALSE(result.has_value());
   EXPECT_THAT(result.error(), HasSubstr("thresholds.humidity"));
+}
+
+TEST(LoadConfigTest, ReadsTheBroker) {
+  const TempConfigFile file{"[mqtt]\nhost = \"192.168.1.20\"\nport = 1884"};
+  const auto result = loadConfig(file.string());
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_EQ(result->mqtt.host, "192.168.1.20");
+  EXPECT_EQ(result->mqtt.port, 1884);
+}
+
+TEST(LoadConfigTest, TheBrokerDefaultsToThisComputer) {
+  const TempConfigFile file{"[mqtt]\n"};
+  const auto result = loadConfig(file.string());
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_EQ(result->mqtt.host, "host.docker.internal");
+  EXPECT_EQ(result->mqtt.port, 1883);
+}
+
+TEST(LoadConfigTest, EmptyHostIsAnError) {
+  const TempConfigFile file{"[mqtt]\nhost = \"\""};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("mqtt.host must be set"));
+}
+
+TEST(LoadConfigTest, PortOutOfRangeIsAnError) {
+  const TempConfigFile file{"[mqtt]\nport = 70000"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("mqtt.port must be between 1 and 65535"));
 }
