@@ -58,6 +58,17 @@ unstaged changes for you to review and stage. The dev container sets it up; else
 cmake --preset debug && cmake --build --preset debug --target format
 ```
 
+### Verify before committing
+
+**VS Code task:** `Workflow: Verify` — formatting, clang-tidy, and Debug and Release builds with
+tests, as CI (`.github/workflows/device.yml`) runs them
+
+```bash
+cmake --preset debug && cmake --build --preset debug --target format-check && cmake --workflow --preset tidy && cmake --build --preset debug && ctest --preset debug && cmake --workflow --preset release
+```
+
+Each check also has its own task: `Workflow: Tidy` and `Workflow: Release build and test`.
+
 ### Clean build directories
 
 Useful when builds get into a broken state:
