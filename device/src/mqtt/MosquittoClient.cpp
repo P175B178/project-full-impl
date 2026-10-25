@@ -38,6 +38,14 @@ MosquittoClient::~MosquittoClient() {
   }
 }
 
+void MosquittoClient::setWill(const MqttMessage &will) {
+  if (const int result = mosquitto_will_set(m_handle.get(), will.topic.c_str(), static_cast<int>(will.payload.size()),
+                                            will.payload.data(), will.qos, will.retained);
+      result != MOSQ_ERR_SUCCESS) {
+    throw std::runtime_error{std::format("Cannot set the MQTT Last Will: {}", mosquitto_strerror(result))};
+  }
+}
+
 void MosquittoClient::connect(const MqttSettings &broker) {
   spdlog::info("Connecting to MQTT broker {}:{}", broker.host, broker.port);
   if (const int result = mosquitto_connect(m_handle.get(), broker.host.c_str(), broker.port, keepAliveSeconds);

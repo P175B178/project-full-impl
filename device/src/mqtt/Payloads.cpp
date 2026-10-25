@@ -36,6 +36,16 @@ double oneDecimal(float value) {
   return std::round(static_cast<double>(value) * decimals) / decimals;
 }
 
+/// {"deviceId", "state", "timestamp"}: the status message, for any state name.
+std::string statusJson(std::string_view deviceId, std::string_view state, std::chrono::system_clock::time_point time) {
+  const nlohmann::json status{
+      {"deviceId", deviceId},
+      {"state", state},
+      {"timestamp", isoTimestamp(time)},
+  };
+  return status.dump();
+}
+
 } // namespace
 
 std::string temperatureObservation(std::string_view deviceId, float value, std::chrono::system_clock::time_point time) {
@@ -65,12 +75,11 @@ std::string humidityObservation(std::string_view deviceId, float value, std::chr
 }
 
 std::string statusPayload(std::string_view deviceId, State state, std::chrono::system_clock::time_point time) {
-  const nlohmann::json status{
-      {"deviceId", deviceId},
-      {"state", protocolName(state)},
-      {"timestamp", isoTimestamp(time)},
-  };
-  return status.dump();
+  return statusJson(deviceId, protocolName(state), time);
+}
+
+std::string offlinePayload(std::string_view deviceId, std::chrono::system_clock::time_point time) {
+  return statusJson(deviceId, "offline", time);
 }
 
 } // namespace warden::mqtt

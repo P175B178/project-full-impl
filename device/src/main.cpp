@@ -101,8 +101,11 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
 #endif
 
   warden::mqtt::MosquittoClient mqttClient{config.mqtt.deviceId};
-  mqttClient.connect(config.mqtt);
   warden::mqtt::MqttPublisher publisher{mqttClient, config.mqtt.groupId, config.mqtt.deviceId};
+  // If warden disappears without disconnecting, the broker tells everyone. It sends the message as
+  // given here, so its timestamp is when warden started.
+  mqttClient.setWill(publisher.offlineStatus(std::chrono::system_clock::now()));
+  mqttClient.connect(config.mqtt);
 
   spdlog::info("Running — press Ctrl-C to stop");
 

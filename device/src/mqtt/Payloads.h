@@ -23,4 +23,9 @@ humidityObservation(std::string_view deviceId, float value, std::chrono::system_
 [[nodiscard]] std::string
 statusPayload(std::string_view deviceId, State state, std::chrono::system_clock::time_point time);
 
+/// The status message for a device that is gone: state "offline" (see
+/// protocol/examples/status-offline.json). Not a State of its own: the device is never in it,
+/// others only see it in its place.
+[[nodiscard]] std::string offlinePayload(std::string_view deviceId, std::chrono::system_clock::time_point time);
+
 } // namespace warden::mqtt

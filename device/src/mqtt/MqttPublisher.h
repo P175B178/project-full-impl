@@ -32,7 +32,13 @@ public:
   /// one may be a long time away.
   void reportState(State state, std::chrono::system_clock::time_point time) override;
 
+  /// The status saying this device is offline: the Last Will, which the broker publishes if the
+  /// device disappears without disconnecting.
+  [[nodiscard]] MqttMessage offlineStatus(std::chrono::system_clock::time_point time) const;
+
 private:
+  [[nodiscard]] std::string statusTopic() const;
+
   MqttClient &m_client;
   std::string m_groupId;
   std::string m_deviceId;

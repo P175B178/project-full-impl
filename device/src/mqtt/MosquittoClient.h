@@ -25,6 +25,11 @@ public:
   MosquittoClient(MosquittoClient &&)                 = delete;
   MosquittoClient &operator=(MosquittoClient &&)      = delete;
 
+  /// Sets the Last Will: what the broker publishes for this client if the connection ends without a
+  /// disconnect, after a crash or a lost network. Must come before connect(). Throws
+  /// std::runtime_error if libmosquitto refuses it.
+  void setWill(const MqttMessage &will);
+
   /// Connects to the broker. Throws std::runtime_error if it cannot be reached.
   void connect(const MqttSettings &broker);
 

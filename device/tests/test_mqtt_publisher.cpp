@@ -57,3 +57,13 @@ TEST(MqttPublisherTest, PublishesStatusRetainedUntilConfirmed) {
                                     Field(&MqttMessage::retained, true))));
   publisher.reportState(State::Alert, std::chrono::system_clock::now());
 }
+
+TEST(MqttPublisherTest, OfflineStatusIsDeliveredLikeAnyStatus) {
+  StrictMock<MockMqttClient> client;
+  const MqttPublisher publisher{client, "group-7", "group-7-pi5"};
+  const MqttMessage offline = publisher.offlineStatus(std::chrono::system_clock::now());
+  EXPECT_EQ(offline.topic, "sensors/group-7/status");
+  EXPECT_EQ(nlohmann::json::parse(offline.payload)["state"], "offline");
+  EXPECT_EQ(offline.qos, 1);
+  EXPECT_TRUE(offline.retained);
+}

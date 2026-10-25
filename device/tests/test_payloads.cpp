@@ -56,3 +56,8 @@ TEST(PayloadsTest, StatusNamesEveryState) {
   EXPECT_EQ(nlohmann::json::parse(statusPayload("d", State::Warning, exampleTime))["state"], "warning");
   EXPECT_EQ(nlohmann::json::parse(statusPayload("d", State::Alert, exampleTime))["state"], "alert");
 }
+
+TEST(PayloadsTest, OfflineStatusMatchesTheProtocol) {
+  const auto payload = offlinePayload("group-1-pi5", exampleTime);
+  EXPECT_EQ(nlohmann::json::parse(payload), protocolExample("status-offline.json"));
+}
