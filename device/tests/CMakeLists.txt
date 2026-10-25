@@ -6,6 +6,7 @@ FetchContent_Declare(
     GIT_SHALLOW    TRUE
     FIND_PACKAGE_ARGS
 )
+set(INSTALL_GTEST OFF) # keep it out of installs and packages
 FetchContent_MakeAvailable(googletest)
 
 add_executable(warden_tests

@@ -97,6 +97,43 @@ if(ENABLE_HARDWARE)
     target_compile_definitions(warden PRIVATE ENABLE_HARDWARE)
 endif()
 
+# ── Install rules ──
+# Relative to the root of the target filesystem, so it installs /usr/bin/warden
+# and /etc/warden/warden.toml. For that, the install prefix defaults to /.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "/" CACHE PATH "Install path prefix" FORCE)
+endif()
+install(TARGETS warden RUNTIME DESTINATION usr/bin)
+install(FILES config/warden.toml DESTINATION etc/warden)
+
+# ── Packaging (CPack) ──
+# The archive name gets the target CPU: warden-1.0.0-aarch64 for the Pi.
+set(CPACK_PACKAGE_FILE_NAME "warden-${PROJECT_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Environmental monitor for Raspberry Pi")
+set(CPACK_GENERATOR "TGZ")
+# From / rather than CPack's default /usr for .deb, which would put the config in
+# /usr/etc/warden.
+set(CPACK_PACKAGING_INSTALL_PREFIX "/")
+
+if(ENABLE_HARDWARE)
+    list(APPEND CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "warden")
+    set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgpiod3") # libgpiod v2 API = libgpiod.so.3
+    # CPack labels the .deb with the architecture of the machine that builds it
+    # (dpkg --print-architecture), which is wrong when cross-compiling for the Pi.
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    endif()
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
+        "Monitors temperature and humidity via DHT22 on a Raspberry Pi.\n Signals state through built-in LEDs and a buzzer.")
+    # A conffile, so upgrading the package keeps local edits.
+    file(WRITE "${PROJECT_BINARY_DIR}/conffiles" "/etc/warden/warden.toml\n")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_BINARY_DIR}/conffiles")
+endif()
+
+include(CPack)
+
 # ── Format target ──
 find_program(CLANG_FORMAT_EXE clang-format)
 if(CLANG_FORMAT_EXE)

@@ -126,6 +126,27 @@ tools/pi/connect.sh
 
 ---
 
+## Packaging a release
+
+**VS Code task:** `Workflow: Package` — an optimized Pi build, packaged as `.deb` and `.tar.gz` in
+`package/`
+
+```bash
+rm -rf package && cmake --workflow --preset package
+```
+
+Install the `.deb` on the Pi:
+
+```bash
+scp package/warden_1.0.0_arm64.deb "$PI_USER@$PI_HOST:"   # in the dev container
+sudo apt install ./warden_1.0.0_arm64.deb                 # on the Pi
+```
+
+It installs `/usr/bin/warden` and its config, `/etc/warden/warden.toml`; upgrading keeps your
+changes to the config.
+
+---
+
 ## Utilities
 
 ### Formatting
