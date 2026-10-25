@@ -40,6 +40,12 @@
       "command": "cmake --workflow --preset tidy",
       "problemMatcher": ["$gcc"]
     },
+    {
+      "label": "Workflow: Release build and test",
+      "type": "shell",
+      "command": "cmake --workflow --preset release",
+      "problemMatcher": ["$gcc"]
+    },
     // ── Utilities ──
     {
       "label": "Format all sources",

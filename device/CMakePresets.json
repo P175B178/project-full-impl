@@ -17,6 +17,14 @@
       }
     },
     {
+      "name": "release",
+      "displayName": "Release (host)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
       "name": "clang-tidy",
       "displayName": "Clang-Tidy (host)",
       "inherits": "base",
@@ -29,6 +37,7 @@
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
     { "name": "clang-tidy", "configurePreset": "clang-tidy", "cleanFirst": true }
   ],
   "testPresets": [
@@ -41,6 +50,13 @@
       "environment": {
         "UBSAN_OPTIONS": "print_stacktrace=1"
       }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ],
   "workflowPresets": [
@@ -50,6 +66,15 @@
       "steps": [
         { "type": "configure", "name": "clang-tidy" },
         { "type": "build",     "name": "clang-tidy" }
+      ]
+    },
+    {
+      "name": "release",
+      "displayName": "Release — build and test (host)",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build",     "name": "release" },
+        { "type": "test",      "name": "release" }
       ]
     }
   ]
