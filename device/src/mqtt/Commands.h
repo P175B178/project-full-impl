@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -14,5 +15,11 @@ namespace warden::mqtt {
 /// The same for humidity, {"value": 50.0, "unit": "%"} (see
 /// protocol/examples/config-humidity-threshold.json).
 [[nodiscard]] std::expected<float, std::string> parseHumidityThreshold(std::string_view payload);
+
+/// What to do with each valid command. Called on the MQTT client's thread.
+struct CommandHandlers {
+  std::function<void(float threshold)> temperatureThreshold;
+  std::function<void(float threshold)> humidityThreshold;
+};
 
 } // namespace warden::mqtt

@@ -10,6 +10,7 @@ class MockMqttClient : public mqtt::MqttClient {
 public:
   MOCK_METHOD(void, publish, (const mqtt::MqttMessage &message), (override));
   MOCK_METHOD(void, setConnectedHandler, (std::function<void()> handler), (override));
+  MOCK_METHOD(void, subscribe, (const std::string &topic, mqtt::MqttMessageHandler handler), (override));
 };
 
 } // namespace warden::test

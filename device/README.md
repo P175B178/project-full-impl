@@ -73,6 +73,9 @@ container, not both at once: the two would publish on the same topics.
 
 Watch the messages in MQTT Explorer, at http://localhost:3000 while the broker runs.
 
+A retained command wins over `warden.toml` at every connection, until you clear it by publishing
+an empty retained message on its topic.
+
 ---
 
 ## Raspberry Pi

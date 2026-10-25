@@ -2,6 +2,7 @@
 #include "core/WardenApp.h"
 #include "mqtt/MosquittoClient.h"
 #include "mqtt/MqttPublisher.h"
+#include "mqtt/MqttSubscriber.h"
 
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
@@ -105,6 +106,11 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
   warden::WardenApp app{sensor, led, buzzer, publisher, config};
   // After every (re)connect: the state replaces the Last Will's offline, if the broker sent it.
   mqttClient.setConnectedHandler([&app] { app.reportStateAgain(); });
+  warden::mqtt::MqttSubscriber subscriber{mqttClient, config.mqtt.groupId};
+  subscriber.subscribeToCommands({
+      .temperatureThreshold = [&app](float threshold) { app.setTemperatureThreshold(threshold); },
+      .humidityThreshold    = [&app](float threshold) { app.setHumidityThreshold(threshold); },
+  });
 
   // If warden disappears without disconnecting, the broker tells everyone. It sends the message as
   // given here, so its timestamp is when warden started.

@@ -17,6 +17,9 @@ struct MqttMessage {
   bool retained{false};
 };
 
+/// What to do with a message that arrived on a subscribed topic: its payload.
+using MqttMessageHandler = std::function<void(const std::string &payload)>;
+
 /// Abstract MQTT client interface: what warden needs from a connection to the broker.
 class MqttClient {
 public:
@@ -33,6 +36,10 @@ public:
   /// Called after every connection, reconnects included, on the client's thread: it should only
   /// pass the news on, as main() does to WardenApp::reportStateAgain(). Set it before connecting.
   virtual void setConnectedHandler(std::function<void()> handler) = 0;
+
+  /// Subscribes to `topic`, now and after every reconnect. `handler` gets each message, on the
+  /// client's thread. Subscribe before connecting.
+  virtual void subscribe(const std::string &topic, MqttMessageHandler handler) = 0;
 };
 
 } // namespace warden::mqtt

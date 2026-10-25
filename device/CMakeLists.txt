@@ -103,6 +103,7 @@ add_library(warden_mqtt
     src/mqtt/Commands.cpp
     src/mqtt/MosquittoClient.cpp
     src/mqtt/MqttPublisher.cpp
+    src/mqtt/MqttSubscriber.cpp
     src/mqtt/Payloads.cpp
 )
 target_include_directories(warden_mqtt PUBLIC src/mqtt)

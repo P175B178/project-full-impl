@@ -13,6 +13,8 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace warden::mqtt {
 
@@ -50,6 +52,7 @@ public:
   void publishAndWait(const MqttMessage &message, std::chrono::milliseconds timeout);
 
   void setConnectedHandler(std::function<void()> handler) override;
+  void subscribe(const std::string &topic, MqttMessageHandler handler) override;
 
   /// Disconnects and stops the network thread: no handler is called after this returns. Call it
   /// before whatever the handlers use is destroyed; the destructor does it too.
@@ -59,6 +62,7 @@ private:
   // libmosquitto calls these on its network thread.
   static void onConnect(mosquitto *handle, void *self, int result);
   static void onDisconnect(mosquitto *handle, void *self, int reason);
+  static void onMessage(mosquitto *handle, void *self, const mosquitto_message *message);
   static void onPublish(mosquitto *handle, void *self, int messageId);
 
   struct HandleDeleter {
@@ -67,8 +71,11 @@ private:
   std::unique_ptr<mosquitto, HandleDeleter> m_handle;
   std::string m_brokerName;                 ///< host:port, for the log
   std::function<void()> m_connectedHandler; ///< Set before the network thread starts
-  bool m_started{false};                    ///< Whether the network thread runs, so disconnect() stops it
-  std::atomic<bool> m_online{false};        ///< Whether connected now; set on the network thread
+  /// The topics subscribed to and their handlers. Complete before the network thread starts, and
+  /// only read after that, so it needs no lock.
+  std::vector<std::pair<std::string, MqttMessageHandler>> m_subscriptions;
+  bool m_started{false};             ///< Whether the network thread runs, so disconnect() stops it
+  std::atomic<bool> m_online{false}; ///< Whether connected now; set on the network thread
   // Only touched on the network thread:
   bool m_wasOnline{false};        ///< Whether connected before, so a disconnect is a loss
   bool m_reportedNotFound{false}; ///< Whether "cannot reach" was logged since the last connection

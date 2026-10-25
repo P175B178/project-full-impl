@@ -32,6 +32,7 @@ MosquittoClient::MosquittoClient(const std::string &clientId) {
   }
   mosquitto_connect_callback_set(m_handle.get(), &MosquittoClient::onConnect);
   mosquitto_disconnect_callback_set(m_handle.get(), &MosquittoClient::onDisconnect);
+  mosquitto_message_callback_set(m_handle.get(), &MosquittoClient::onMessage);
   mosquitto_publish_callback_set(m_handle.get(), &MosquittoClient::onPublish);
 }
 
@@ -46,6 +47,10 @@ void MosquittoClient::disconnect() {
 }
 
 void MosquittoClient::setConnectedHandler(std::function<void()> handler) { m_connectedHandler = std::move(handler); }
+
+void MosquittoClient::subscribe(const std::string &topic, MqttMessageHandler handler) {
+  m_subscriptions.emplace_back(topic, std::move(handler));
+}
 
 void MosquittoClient::setWill(const MqttMessage &will) {
   if (const int result = mosquitto_will_set(m_handle.get(), will.topic.c_str(), static_cast<int>(will.payload.size()),
@@ -138,6 +143,15 @@ void MosquittoClient::onConnect(mosquitto * /*handle*/, void *self, int result) 
   client.m_online           = true;
   client.m_wasOnline        = true;
   client.m_reportedNotFound = false;
+
+  // The broker forgets a client's subscriptions when it disconnects (a clean session), so they are
+  // made again on every connection.
+  for (const auto &[topic, handler] : client.m_subscriptions) {
+    if (const int subscribed = mosquitto_subscribe(client.m_handle.get(), /*mid=*/nullptr, topic.c_str(), /*qos=*/1);
+        subscribed != MOSQ_ERR_SUCCESS) {
+      spdlog::error("Cannot subscribe to {}: {}", topic, mosquitto_strerror(subscribed));
+    }
+  }
   if (client.m_connectedHandler) {
     client.m_connectedHandler();
   }
@@ -157,6 +171,17 @@ void MosquittoClient::onDisconnect(mosquitto * /*handle*/, void *self, int reaso
   } else if (!client.m_reportedNotFound) {
     spdlog::warn("Cannot reach MQTT broker {}; trying again in the background", client.m_brokerName);
     client.m_reportedNotFound = true;
+  }
+}
+
+void MosquittoClient::onMessage(mosquitto * /*handle*/, void *self, const mosquitto_message *message) {
+  const auto &client = *static_cast<MosquittoClient *>(self);
+  // Only exact topics are subscribed to, no wildcards: the one with the same name handles it.
+  for (const auto &[topic, handler] : client.m_subscriptions) {
+    if (topic == message->topic) {
+      handler(std::string{static_cast<const char *>(message->payload), static_cast<std::size_t>(message->payloadlen)});
+      return;
+    }
   }
 }
 
