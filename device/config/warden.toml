@@ -45,7 +45,8 @@ group_id = "group-1"
 
 # The broker to connect to. Keep ONE of the three sections below and comment out
 # the other two; two at once set the same setting twice, which is an error. Paths
-# are relative to this file's folder.
+# are relative to this file's folder; deploy copies the certificates to the Pi so
+# that they work there too.
 
 # ── Your own broker, plain: broker/dev ──
 # By default this computer, as seen from the dev container. From the Pi, use this

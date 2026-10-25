@@ -77,8 +77,8 @@ echo 'your password' > config/mqtt-password
 chmod 600 config/mqtt-password
 ```
 
-Then set `password_file = "mqtt-password"`. With the package, put the file next to
-`/etc/warden/warden.toml`.
+Then set `password_file = "mqtt-password"`; deploy copies it to the Pi. With the package, put the
+file next to `/etc/warden/warden.toml`.
 
 Set `group_id` to your group's id, such as `group-1`. Run `warden` on the Pi or in the dev
 container, not both at once: the two would publish on the same topics.
