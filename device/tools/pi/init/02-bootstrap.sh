@@ -24,7 +24,8 @@ sudo apt-get update
 echo "==> Installing runtime dependencies"
 sudo apt-get install -y --no-install-recommends \
   ca-certificates \
-  rsync
+  rsync \
+  gdbserver
 
 echo "==> Creating app directory"
 mkdir -p "$HOME/apps/warden/config"

@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++-aarch64-linux-gnu \
     # ── Debugging (gdb 16.3) ──
     gdb \
+    gdb-multiarch \
     # ── Version control ──
     git \
     # ── Remote access and file transfer ──

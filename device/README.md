@@ -103,6 +103,12 @@ tools/pi/deploy.sh                           # build/pi-debug/warden
 tools/pi/deploy.sh build/pi-release/warden   # or the release build
 ```
 
+### Remote debugging
+
+**VS Code launch config:** `Pi: Remote Debug` (`F5`, picked in the debug dropdown) — starts
+gdbserver on the Pi (task `Pi: Start gdbserver`, `tools/pi/debug.sh`) and connects to it. Run
+`Pi: Build` and `Pi: Deploy` first, so the program on the Pi matches the debug symbols.
+
 ### Shell
 
 **VS Code task:** `Pi: SSH`

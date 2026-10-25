@@ -64,6 +64,20 @@
     },
     // ── Pi: tools ──
     {
+      "label": "Pi: Start gdbserver",
+      "type": "shell",
+      "command": "tools/pi/debug.sh",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^==> Starting gdbserver",
+          "endsPattern": "^==> Debug server ready"
+        }
+      }
+    },
+    {
       "label": "Pi: SSH",
       "type": "shell",
       "command": "tools/pi/connect.sh",
