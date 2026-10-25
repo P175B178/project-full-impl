@@ -69,13 +69,18 @@ warden_configure_target(warden_core)
 
 # ── Hardware drivers ──
 if(ENABLE_HARDWARE)
+    # libgpiod 2 replaced the whole API: version 1 would give confusing compile errors.
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GPIOD REQUIRED IMPORTED_TARGET libgpiod>=2)
+
     add_library(warden_hardware
         src/hardware/buzzer/GpioBuzzer.cpp
+        src/hardware/buzzer/GpioPin.cpp
         src/hardware/led/StatusLed.cpp
         src/hardware/led/SysfsLed.cpp
         src/hardware/sensor/Dht22Sensor.cpp
     )
-    target_link_libraries(warden_hardware PUBLIC warden_core)
+    target_link_libraries(warden_hardware PUBLIC warden_core PkgConfig::GPIOD)
     warden_configure_target(warden_hardware)
 endif()
 

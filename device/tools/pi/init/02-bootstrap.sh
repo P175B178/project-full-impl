@@ -25,7 +25,9 @@ echo "==> Installing runtime dependencies"
 sudo apt-get install -y --no-install-recommends \
   ca-certificates \
   rsync \
-  gdbserver
+  gdbserver \
+  libgpiod3 \
+  gpiod
 
 echo "==> Creating app directory"
 mkdir -p "$HOME/apps/warden/config"

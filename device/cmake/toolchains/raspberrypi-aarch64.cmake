@@ -23,5 +23,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
+# pkg-config runs on this machine, so point it at the arm64 packages' .pc files.
+set(ENV{PKG_CONFIG_LIBDIR} "/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig")
+
 # CMake's compiler checks build a library: a cross-compiled program cannot run here.
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
