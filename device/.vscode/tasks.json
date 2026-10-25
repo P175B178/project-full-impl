@@ -33,6 +33,21 @@
       },
       "problemMatcher": []
     },
+    // ── Pi ──
+    {
+      "label": "Pi: Build",
+      "type": "shell",
+      "command": "cmake --preset pi-debug && cmake --build --preset pi-debug",
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Pi: Build (Release)",
+      "type": "shell",
+      "command": "cmake --preset pi-release && cmake --build --preset pi-release",
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
     // ── Checks ──
     {
       // All the checks in one task.

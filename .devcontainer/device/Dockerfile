@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ninja-build \
     clang-format \
     clang-tidy \
+    # ── Cross-compilation (Raspberry Pi 5 / aarch64) ──
+    gcc-aarch64-linux-gnu \
+    g++-aarch64-linux-gnu \
     # ── Debugging (gdb 16.3) ──
     gdb \
     # ── Version control ──

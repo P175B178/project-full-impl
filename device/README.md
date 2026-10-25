@@ -52,6 +52,24 @@ file.
 
 ---
 
+## Raspberry Pi
+
+### Build
+
+**VS Code task:** `Pi: Build` — debug
+
+```bash
+cmake --preset pi-debug && cmake --build --preset pi-debug
+```
+
+**VS Code task:** `Pi: Build (Release)`
+
+```bash
+cmake --preset pi-release && cmake --build --preset pi-release
+```
+
+---
+
 ## Utilities
 
 ### Formatting

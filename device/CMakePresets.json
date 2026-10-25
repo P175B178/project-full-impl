@@ -25,6 +25,31 @@
       }
     },
     {
+      "name": "pi",
+      "hidden": true,
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/raspberrypi-aarch64.cmake",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "pi-debug",
+      "displayName": "Pi Debug",
+      "inherits": "pi",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "pi-release",
+      "displayName": "Pi Release",
+      "inherits": "pi",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
       "name": "clang-tidy",
       "displayName": "Clang-Tidy (host)",
       "inherits": "base",
@@ -38,6 +63,8 @@
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
     { "name": "release", "configurePreset": "release" },
+    { "name": "pi-debug", "configurePreset": "pi-debug" },
+    { "name": "pi-release", "configurePreset": "pi-release" },
     { "name": "clang-tidy", "configurePreset": "clang-tidy", "cleanFirst": true }
   ],
   "testPresets": [
