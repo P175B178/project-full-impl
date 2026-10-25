@@ -45,6 +45,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tomlplusplus)
 
+FetchContent_Declare(
+    CLI11
+    GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+    GIT_TAG        v2.5.0
+    GIT_SHALLOW    TRUE
+    FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(CLI11)
+
 # ── Core library (no hardware deps, testable on host) ──
 add_library(warden_core
     src/core/Config.cpp
@@ -58,7 +67,9 @@ warden_configure_target(warden_core)
 # ── Main executable ──
 # main.cpp includes the header-only simulation classes in src/sim.
 add_executable(warden src/main.cpp)
-target_link_libraries(warden PRIVATE warden_core)
+# Inject project version so --version can report it without hardcoding.
+target_compile_definitions(warden PRIVATE WARDEN_VERSION="${PROJECT_VERSION}")
+target_link_libraries(warden PRIVATE warden_core CLI11::CLI11)
 warden_configure_target(warden)
 
 # ── Format target ──

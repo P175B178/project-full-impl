@@ -6,6 +6,7 @@
 #include "sim/ConsoleLed.h"
 #include "sim/SimulatedSensor.h"
 
+#include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
 
 #include <atomic>
@@ -14,9 +15,10 @@
 #include <csignal>
 #include <cstdlib>
 #include <exception>
+#include <expected>
 #include <mutex>
 #include <stop_token>
-#include <string_view>
+#include <string>
 #include <thread>
 
 // Everything except main() is internal to this file.
@@ -55,22 +57,47 @@ std::jthread watchForStopSignals(std::stop_source &appStop) {
   }};
 }
 
+// ── Command line ─────────────────────────────────────────────────────────────
+struct CommandLine {
+  std::string configPath{"/etc/warden/warden.toml"};
+};
+
+/// Returns the arguments, or the exit code to stop with: 0 after --help or --version, non-zero for
+/// bad arguments.
+std::expected<CommandLine, int> parseCommandLine(int argc, char **argv) {
+  CommandLine commandLine;
+
+  CLI::App app{"Warden — environmental monitor", "warden"};
+  app.set_version_flag("--version", std::string{WARDEN_VERSION});
+  app.add_option("-c,--config", commandLine.configPath, "Config file")->capture_default_str();
+
+  try {
+    app.parse(argc, argv);
+  } catch (const CLI::ParseError &err) {
+    return std::unexpected{app.exit(err)}; // prints the help, version or error
+  }
+  return commandLine;
+}
+
 // ── Entry point ──────────────────────────────────────────────────────────────
-int runApp() {
-  constexpr std::string_view configPath = "config/warden.toml";
+int runApp(int argc, char **argv) {
+  const auto commandLine = parseCommandLine(argc, argv);
+  if (!commandLine) {
+    return commandLine.error();
+  }
 
   std::stop_source appStop;
   const auto signalWatcher = watchForStopSignals(appStop);
   const auto stopToken     = appStop.get_token();
 
-  const auto configResult = warden::loadConfig(configPath);
+  const auto configResult = warden::loadConfig(commandLine->configPath);
   if (!configResult) {
-    spdlog::error("Failed to load config '{}': {}", configPath, configResult.error());
+    spdlog::error("Failed to load config '{}': {}", commandLine->configPath, configResult.error());
     return EXIT_FAILURE;
   }
   const auto &config = *configResult;
 
-  spdlog::info("Warden starting — config: {}", configPath);
+  spdlog::info("Warden {} starting — config: {}", WARDEN_VERSION, commandLine->configPath);
   spdlog::info("Temperature threshold: {:.1f} °C, humidity threshold: {:.1f}%", config.thresholds.temperature,
                config.thresholds.humidity);
   spdlog::info("Read interval: {}s, averaging window: {} readings", config.readInterval.count(),
@@ -126,10 +153,10 @@ int runApp() {
 }
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
   // Anything that throws ends here, so the process logs the reason and exits instead of aborting.
   try {
-    return runApp();
+    return runApp(argc, argv);
   } catch (const std::exception &err) {
     spdlog::critical("Fatal error: {}", err.what());
   } catch (...) {

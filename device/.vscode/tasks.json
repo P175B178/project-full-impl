@@ -17,7 +17,7 @@
     {
       "label": "Local: Run (simulated)",
       "type": "shell",
-      "command": "./build/debug/warden",
+      "command": "./build/debug/warden -c config/warden.toml",
       "dependsOn": "Local: Build",
       "dependsOrder": "sequence",
       "problemMatcher": []

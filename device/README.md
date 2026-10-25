@@ -22,7 +22,7 @@ cmake --preset debug && cmake --build --preset debug
 **VS Code task:** `Local: Run (simulated)` — with a simulated sensor
 
 ```bash
-./build/debug/warden
+./build/debug/warden -c config/warden.toml
 ```
 
 Debug builds run with AddressSanitizer and UndefinedBehaviorSanitizer.
@@ -45,8 +45,10 @@ ctest --preset debug
 
 ## Configuration
 
-`warden` reads its settings from `config/warden.toml`, which documents every setting. A
-misspelled setting falls back to its default, so check the startup log after editing the file.
+`warden` reads `/etc/warden/warden.toml`, where an installed `warden` looks for it, or the file
+given with `-c`/`--config` (`--help` lists all options). `config/warden.toml` documents every
+setting. A misspelled setting falls back to its default, so check the startup log after editing the
+file.
 
 ---
 
