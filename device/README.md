@@ -25,6 +25,8 @@ cmake --preset debug && cmake --build --preset debug
 ./build/debug/warden
 ```
 
+Debug builds run with AddressSanitizer and UndefinedBehaviorSanitizer.
+
 **Debug with breakpoints:**
 
 **VS Code launch config:** `Local: Debug` (`F5`) — builds automatically and launches under GDB.
