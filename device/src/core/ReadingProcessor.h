@@ -8,6 +8,9 @@
 #include "interfaces/Buzzer.h"
 #include "interfaces/Led.h"
 #include "interfaces/Reading.h"
+#include "interfaces/Sensor.h"
+
+#include <expected>
 
 namespace warden {
 
@@ -23,8 +26,8 @@ public:
   ReadingProcessor(ReadingProcessor &&)                 = delete;
   ReadingProcessor &operator=(ReadingProcessor &&)      = delete;
 
-  /// React to one raw reading from the sensor.
-  void process(const Reading &reading);
+  /// React to one read of the sensor: a reading, or the error it reported.
+  void process(const std::expected<Reading, SensorError> &result);
 
   [[nodiscard]] State state() const noexcept { return m_stateMachine.state(); }
 

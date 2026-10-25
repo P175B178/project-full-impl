@@ -1,7 +1,5 @@
 #include "WardenApp.h"
 
-#include <spdlog/spdlog.h>
-
 #include <condition_variable>
 #include <mutex>
 #include <stop_token>
@@ -24,13 +22,7 @@ void WardenApp::run(const std::stop_token &stopToken) {
   std::condition_variable_any sleepCv;
 
   while (!stopToken.stop_requested()) {
-    const auto result = m_sensor.read();
-
-    if (!result) {
-      spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
-    } else {
-      m_processor.process(*result);
-    }
+    m_processor.process(m_sensor.read());
 
     // Sleeps after failed reads too, so broken hardware is not hammered.
     std::unique_lock lock{sleepMutex};

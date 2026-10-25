@@ -14,7 +14,13 @@ ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, const Config &confi
       , m_temperatureBuffer{config.averagingWindow}
       , m_humidityBuffer{config.averagingWindow} {}
 
-void ReadingProcessor::process(const Reading &reading) {
+void ReadingProcessor::process(const std::expected<Reading, SensorError> &result) {
+  if (!result) {
+    spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
+    return;
+  }
+  const Reading &reading = *result;
+
   // Skips what the sensor can report but is implausible here, as set in [plausible_values].
   if (!m_plausibleValues.temperature.contains(reading.temperature) ||
       !m_plausibleValues.humidity.contains(reading.humidity)) {

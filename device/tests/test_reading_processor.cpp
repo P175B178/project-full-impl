@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <expected>
 
 using namespace warden;
 using namespace warden::test;
@@ -25,6 +26,7 @@ Config configWithWindow(std::size_t window) {
 
 const Reading comfortable{.temperature = 20.0F, .humidity = 50.0F};
 const Reading hotAndHumid{.temperature = 30.0F, .humidity = 80.0F};
+const std::expected<Reading, SensorError> readFailure = std::unexpected{SensorError::ReadFailure};
 
 } // namespace
 
@@ -67,21 +69,27 @@ TEST_F(ReadingProcessorTest, LeavingAlertTurnsGreenAndGivesOneLongBeep) {
 
 TEST_F(ReadingProcessorTest, ReactsToTheAverageNotToASingleReading) {
   ReadingProcessor processor{m_led, m_buzzer, configWithWindow(2)};
-  processor.process({.temperature = 20.0F, .humidity = 50.0F});
-  processor.process({.temperature = 34.0F, .humidity = 50.0F}); // average 27 C: still Normal
+  processor.process(Reading{.temperature = 20.0F, .humidity = 50.0F});
+  processor.process(Reading{.temperature = 34.0F, .humidity = 50.0F}); // average 27 C: still Normal
   EXPECT_EQ(processor.state(), State::Normal);
 
   EXPECT_CALL(m_led, show(LedColor::Orange, LedMode::Steady));
-  processor.process({.temperature = 34.0F, .humidity = 50.0F}); // average 34 C: Warning
+  processor.process(Reading{.temperature = 34.0F, .humidity = 50.0F}); // average 34 C: Warning
   EXPECT_EQ(processor.state(), State::Warning);
 }
 
 TEST_F(ReadingProcessorTest, SkipsImplausibleReadingsWithoutAveragingThem) {
   ReadingProcessor processor{m_led, m_buzzer, configWithWindow(2)};
-  processor.process({.temperature = 20.0F, .humidity = 50.0F});
-  processor.process({.temperature = 70.0F, .humidity = 50.0F}); // above the plausible 50 C: skipped
-  processor.process({.temperature = 30.0F, .humidity = 50.0F}); // average of 20 and 30 is 25 C
+  processor.process(Reading{.temperature = 20.0F, .humidity = 50.0F});
+  processor.process(Reading{.temperature = 70.0F, .humidity = 50.0F}); // above the plausible 50 C: skipped
+  processor.process(Reading{.temperature = 30.0F, .humidity = 50.0F}); // average of 20 and 30 is 25 C
   // Had the 70 C reading been averaged in, the average would be 50 C: Warning, and StrictMock would
   // fail the test on the unexpected LED call.
+  EXPECT_EQ(processor.state(), State::Normal);
+}
+
+TEST_F(ReadingProcessorTest, SkipsFailedReads) {
+  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(1)};
+  processor.process(readFailure); // StrictMock fails the test on any LED or buzzer call
   EXPECT_EQ(processor.state(), State::Normal);
 }
