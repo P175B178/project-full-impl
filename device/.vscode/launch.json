@@ -7,7 +7,7 @@
       "name": "Local: Debug",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/device",
+      "program": "${workspaceFolder}/build/debug/warden",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,

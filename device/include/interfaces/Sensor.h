@@ -16,6 +16,13 @@ enum class SensorError {
 /// Read errors are std::expected values, not exceptions: a failed read is expected and recoverable.
 class Sensor {
 public:
+  Sensor()                          = default;
+  virtual ~Sensor()                 = default;
+  Sensor(const Sensor &)            = delete;
+  Sensor &operator=(const Sensor &) = delete;
+  Sensor(Sensor &&)                 = delete;
+  Sensor &operator=(Sensor &&)      = delete;
+
   [[nodiscard]] virtual std::expected<Reading, SensorError> read() = 0;
 };
 

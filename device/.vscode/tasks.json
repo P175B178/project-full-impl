@@ -16,7 +16,7 @@
     {
       "label": "Local: Run",
       "type": "shell",
-      "command": "./build/debug/device",
+      "command": "./build/debug/warden",
       "dependsOn": "Local: Build",
       "dependsOrder": "sequence",
       "problemMatcher": []
