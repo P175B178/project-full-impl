@@ -1,6 +1,6 @@
-#include <cstdio>
+#include <spdlog/spdlog.h>
 
 int main() {
-  std::puts("Warden starting...");
+  spdlog::info("Warden starting");
   return 0;
 }
