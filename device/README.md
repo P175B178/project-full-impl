@@ -73,6 +73,8 @@ address (`ipconfig` on Windows, `ip addr` on Linux).
 Set `group_id` to your group's id, such as `group-1`. Run `warden` on the Pi or in the dev
 container, not both at once: the two would publish on the same topics.
 
+Watch the messages in MQTT Explorer, at http://localhost:3000 while the broker runs.
+
 ---
 
 ## Raspberry Pi

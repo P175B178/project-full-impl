@@ -5,6 +5,7 @@
 #include "interfaces/Sensor.h"
 #include "mocks/MockBuzzer.h"
 #include "mocks/MockLed.h"
+#include "mocks/MockReporter.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -16,6 +17,7 @@ using namespace warden;
 using namespace warden::test;
 using ::testing::InSequence;
 using ::testing::InvokeWithoutArgs;
+using ::testing::NiceMock;
 using ::testing::StrictMock;
 
 namespace {
@@ -38,13 +40,14 @@ class WardenAppTest : public ::testing::Test {
 protected:
   StrictMock<MockLed> m_led;
   StrictMock<MockBuzzer> m_buzzer;
+  NiceMock<MockReporter> m_reporter;
   std::stop_source m_stop;
   Config m_config;
 };
 
 TEST_F(WardenAppTest, TurnsEverythingOffWhenStopped) {
   FakeSensor sensor{Reading{.temperature = 20.0F, .humidity = 50.0F}};
-  WardenApp app{sensor, m_led, m_buzzer, m_config};
+  WardenApp app{sensor, m_led, m_buzzer, m_reporter, m_config};
   const InSequence inOrder;
   EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
   EXPECT_CALL(m_led, turnOff());
@@ -56,7 +59,7 @@ TEST_F(WardenAppTest, TurnsEverythingOffWhenStopped) {
 
 TEST_F(WardenAppTest, HandsReadingsToTheProcessor) {
   FakeSensor sensor{Reading{.temperature = 30.0F, .humidity = 80.0F}};
-  WardenApp app{sensor, m_led, m_buzzer, m_config};
+  WardenApp app{sensor, m_led, m_buzzer, m_reporter, m_config};
   const InSequence inOrder;
   EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
   EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking)).WillOnce(InvokeWithoutArgs([this] {
@@ -72,7 +75,7 @@ TEST_F(WardenAppTest, HandsReadingsToTheProcessor) {
 TEST_F(WardenAppTest, HandsFailedReadsToTheProcessor) {
   m_config.faultAfterFailedReads = 1;
   FakeSensor sensor{std::unexpected{SensorError::ReadFailure}};
-  WardenApp app{sensor, m_led, m_buzzer, m_config};
+  WardenApp app{sensor, m_led, m_buzzer, m_reporter, m_config};
   const InSequence inOrder;
   EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
   EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady)).WillOnce(InvokeWithoutArgs([this] {

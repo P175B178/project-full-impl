@@ -6,9 +6,10 @@
 
 namespace warden {
 
-ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, const Config &config)
+ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, Reporter &reporter, const Config &config)
       : m_led{led}
       , m_buzzer{buzzer}
+      , m_reporter{reporter}
       , m_plausibleValues{config.plausibleValues}
       , m_faultAfterFailedReads{config.faultAfterFailedReads}
       , m_stateMachine{config.thresholds}
@@ -41,6 +42,7 @@ void ReadingProcessor::process(const std::expected<Reading, SensorError> &result
   const SmoothedReading smoothed{.temperature = m_temperatureBuffer.average().value_or(reading.temperature),
                                  .humidity    = m_humidityBuffer.average().value_or(reading.humidity)};
 
+  m_reporter.reportReading(smoothed, reading.timestamp);
   const auto transition = m_stateMachine.update(smoothed);
 
   spdlog::info("temp={:.1f} °C (raw={:.1f})  hum={:.1f}% (raw={:.1f})  state={}", smoothed.temperature,

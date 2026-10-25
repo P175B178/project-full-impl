@@ -1,6 +1,7 @@
 #include "core/Config.h"
 #include "core/WardenApp.h"
 #include "mqtt/MosquittoClient.h"
+#include "mqtt/MqttPublisher.h"
 
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
@@ -101,10 +102,11 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
 
   warden::mqtt::MosquittoClient mqttClient{config.mqtt.deviceId};
   mqttClient.connect(config.mqtt);
+  warden::mqtt::MqttPublisher publisher{mqttClient, config.mqtt.groupId, config.mqtt.deviceId};
 
   spdlog::info("Running — press Ctrl-C to stop");
 
-  warden::WardenApp app{sensor, led, buzzer, config};
+  warden::WardenApp app{sensor, led, buzzer, publisher, config};
   app.run(stopToken);
 }
 

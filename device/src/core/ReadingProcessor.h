@@ -3,6 +3,7 @@
 #include "AveragingBuffer.h"
 #include "Config.h"
 #include "Range.h"
+#include "Reporter.h"
 #include "State.h"
 #include "StateMachine.h"
 #include "interfaces/Buzzer.h"
@@ -19,7 +20,7 @@ namespace warden {
 /// unit tested with mocks.
 class ReadingProcessor {
 public:
-  ReadingProcessor(Led &led, Buzzer &buzzer, const Config &config);
+  ReadingProcessor(Led &led, Buzzer &buzzer, Reporter &reporter, const Config &config);
 
   ~ReadingProcessor()                                   = default;
   ReadingProcessor(const ReadingProcessor &)            = delete;
@@ -38,6 +39,7 @@ private:
 
   Led &m_led;
   Buzzer &m_buzzer;
+  Reporter &m_reporter;
   PlausibleValues m_plausibleValues;
   std::size_t m_faultAfterFailedReads;
   StateMachine m_stateMachine;

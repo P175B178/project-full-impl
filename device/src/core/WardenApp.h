@@ -3,6 +3,7 @@
 #include "BlockingQueue.h"
 #include "Config.h"
 #include "ReadingProcessor.h"
+#include "Reporter.h"
 #include "interfaces/Buzzer.h"
 #include "interfaces/Led.h"
 #include "interfaces/Reading.h"
@@ -17,7 +18,7 @@ namespace warden {
 /// Runs the monitoring loop: reads the sensor and hands the result to a ReadingProcessor. The logic
 /// lives there, where it can be tested on its own.
 ///
-/// The sensor, LED and buzzer are injected, so any conforming implementation can be used.
+/// The sensor, LED, buzzer and reporter are injected, so any conforming implementation can be used.
 ///
 /// Threading:
 ///   - sensorLoop() runs on its own thread and pushes each result onto the queue.
@@ -25,7 +26,7 @@ namespace warden {
 ///   - run() stops and joins the sensor thread before returning.
 class WardenApp {
 public:
-  WardenApp(Sensor &sensor, Led &led, Buzzer &buzzer, const Config &config);
+  WardenApp(Sensor &sensor, Led &led, Buzzer &buzzer, Reporter &reporter, const Config &config);
 
   ~WardenApp()                            = default;
   WardenApp(const WardenApp &)            = delete;

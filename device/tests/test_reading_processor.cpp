@@ -2,6 +2,7 @@
 
 #include "mocks/MockBuzzer.h"
 #include "mocks/MockLed.h"
+#include "mocks/MockReporter.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -11,7 +12,10 @@
 
 using namespace warden;
 using namespace warden::test;
+using ::testing::AllOf;
+using ::testing::Field;
 using ::testing::InSequence;
+using ::testing::NiceMock;
 using ::testing::StrictMock;
 
 namespace {
@@ -39,22 +43,24 @@ Config configWithFaultAfter(std::size_t failedReads) {
 } // namespace
 
 // StrictMock fails the test on any LED or buzzer call that is not expected, so a test without
-// EXPECT_CALLs checks that nothing reacted at all.
+// EXPECT_CALLs checks that nothing reacted at all. The reporter is a NiceMock: it accepts every
+// report, and only the tests about reporting set expectations on it.
 class ReadingProcessorTest : public ::testing::Test {
 protected:
   StrictMock<MockLed> m_led;
   StrictMock<MockBuzzer> m_buzzer;
+  NiceMock<MockReporter> m_reporter;
 };
 
 TEST_F(ReadingProcessorTest, StaysQuietWhileReadingsAreBelowThresholds) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
   processor.process(comfortable);
   processor.process(comfortable);
   EXPECT_EQ(processor.state(), State::Normal);
 }
 
 TEST_F(ReadingProcessorTest, EnteringAlertBlinksRedAndBeeps) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
   EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
   EXPECT_CALL(m_buzzer, shortBeep(3));
   processor.process(hotAndHumid);
@@ -62,7 +68,7 @@ TEST_F(ReadingProcessorTest, EnteringAlertBlinksRedAndBeeps) {
 }
 
 TEST_F(ReadingProcessorTest, LeavingAlertTurnsGreenAndGivesOneLongBeep) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
   {
     const InSequence inOrder;
     EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
@@ -76,7 +82,7 @@ TEST_F(ReadingProcessorTest, LeavingAlertTurnsGreenAndGivesOneLongBeep) {
 }
 
 TEST_F(ReadingProcessorTest, ReactsToTheAverageNotToASingleReading) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(2)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(2)};
   processor.process(Reading{.temperature = 20.0F, .humidity = 50.0F});
   processor.process(Reading{.temperature = 34.0F, .humidity = 50.0F}); // average 27 C: still Normal
   EXPECT_EQ(processor.state(), State::Normal);
@@ -87,7 +93,7 @@ TEST_F(ReadingProcessorTest, ReactsToTheAverageNotToASingleReading) {
 }
 
 TEST_F(ReadingProcessorTest, SkipsImplausibleReadingsWithoutAveragingThem) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(2)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(2)};
   processor.process(Reading{.temperature = 20.0F, .humidity = 50.0F});
   processor.process(Reading{.temperature = 70.0F, .humidity = 50.0F}); // above the plausible 50 C: skipped
   processor.process(Reading{.temperature = 30.0F, .humidity = 50.0F}); // average of 20 and 30 is 25 C
@@ -97,20 +103,20 @@ TEST_F(ReadingProcessorTest, SkipsImplausibleReadingsWithoutAveragingThem) {
 }
 
 TEST_F(ReadingProcessorTest, SkipsFailedReads) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithWindow(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
   processor.process(readFailure); // StrictMock fails the test on any LED or buzzer call
   EXPECT_EQ(processor.state(), State::Normal);
 }
 
 TEST_F(ReadingProcessorTest, StaysQuietWhileFailedReadsStayBelowTheLimit) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithFaultAfter(3)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(3)};
   processor.process(readFailure);
   processor.process(implausible);
   EXPECT_EQ(processor.state(), State::Normal);
 }
 
 TEST_F(ReadingProcessorTest, RepeatedFailedReadsShowASteadyRedFault) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithFaultAfter(3)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(3)};
   EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady));
   processor.process(readFailure);
   processor.process(implausible); // implausible readings count as failed reads too
@@ -119,7 +125,7 @@ TEST_F(ReadingProcessorTest, RepeatedFailedReadsShowASteadyRedFault) {
 }
 
 TEST_F(ReadingProcessorTest, AValidReadingResetsTheFailedReadCount) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithFaultAfter(3)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(3)};
   processor.process(readFailure);
   processor.process(readFailure);
   processor.process(comfortable);
@@ -129,7 +135,7 @@ TEST_F(ReadingProcessorTest, AValidReadingResetsTheFailedReadCount) {
 }
 
 TEST_F(ReadingProcessorTest, AValidReadingEndsTheFault) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithFaultAfter(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(1)};
   {
     const InSequence inOrder;
     EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady));
@@ -141,7 +147,7 @@ TEST_F(ReadingProcessorTest, AValidReadingEndsTheFault) {
 }
 
 TEST_F(ReadingProcessorTest, FaultDuringAlertGivesNoAllClearBeep) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithFaultAfter(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(1)};
   {
     const InSequence inOrder;
     EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
@@ -153,7 +159,7 @@ TEST_F(ReadingProcessorTest, FaultDuringAlertGivesNoAllClearBeep) {
 }
 
 TEST_F(ReadingProcessorTest, AFaultEndsAnAlarmWithoutTheLongBeep) {
-  ReadingProcessor processor{m_led, m_buzzer, configWithFaultAfter(1)};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(1)};
   {
     const InSequence inOrder;
     EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
@@ -170,7 +176,7 @@ TEST_F(ReadingProcessorTest, AFaultEndsAnAlarmWithoutTheLongBeep) {
 TEST_F(ReadingProcessorTest, AveragingStartsAfreshAfterAFault) {
   Config config          = configWithFaultAfter(1);
   config.averagingWindow = 2;
-  ReadingProcessor processor{m_led, m_buzzer, config};
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, config};
   processor.process(comfortable);
   {
     const InSequence inOrder;
@@ -183,4 +189,20 @@ TEST_F(ReadingProcessorTest, AveragingStartsAfreshAfterAFault) {
   // Normal. On its own, it is Alert.
   processor.process(hotAndHumid);
   EXPECT_EQ(processor.state(), State::Alert);
+}
+
+TEST_F(ReadingProcessorTest, ReportsTheAveragedReading) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(2)};
+  processor.process(comfortable); // 20 C, 50 %
+  EXPECT_CALL(m_reporter, reportReading(AllOf(Field(&SmoothedReading::temperature, 21.0F),
+                                              Field(&SmoothedReading::humidity, 51.0F)),
+                                        ::testing::_));
+  processor.process(Reading{.temperature = 22.0F, .humidity = 52.0F}); // averages: 21 C, 51 %
+}
+
+TEST_F(ReadingProcessorTest, ReportsNothingForASkippedReading) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(3)};
+  EXPECT_CALL(m_reporter, reportReading(::testing::_, ::testing::_)).Times(0);
+  processor.process(readFailure);
+  processor.process(implausible);
 }

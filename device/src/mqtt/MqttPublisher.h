@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MqttClient.h"
+#include "Reporter.h"
 #include "StateMachine.h"
 
 #include <chrono>
@@ -10,11 +11,11 @@ namespace warden::mqtt {
 
 /// Turns what warden has to report into MQTT messages: the topics, payloads and delivery settings
 /// of protocol/, for one group and device.
-class MqttPublisher {
+class MqttPublisher final : public Reporter {
 public:
   MqttPublisher(MqttClient &client, std::string groupId, std::string deviceId);
 
-  ~MqttPublisher()                                = default;
+  ~MqttPublisher() override                       = default;
   MqttPublisher(const MqttPublisher &)            = delete;
   MqttPublisher &operator=(const MqttPublisher &) = delete;
   MqttPublisher(MqttPublisher &&)                 = delete;
@@ -23,7 +24,7 @@ public:
   /// Publishes the averaged temperature and humidity, one message each, on
   /// sensors/<group-id>/temperature and sensors/<group-id>/humidity. Sent once and not retained: a
   /// newer reading follows soon anyway.
-  void reportReading(const SmoothedReading &reading, std::chrono::system_clock::time_point time);
+  void reportReading(const SmoothedReading &reading, std::chrono::system_clock::time_point time) override;
 
 private:
   MqttClient &m_client;

@@ -7,12 +7,12 @@
 
 namespace warden {
 
-WardenApp::WardenApp(Sensor &sensor, Led &led, Buzzer &buzzer, const Config &config)
+WardenApp::WardenApp(Sensor &sensor, Led &led, Buzzer &buzzer, Reporter &reporter, const Config &config)
       : m_sensor{sensor}
       , m_led{led}
       , m_buzzer{buzzer}
       , m_readInterval{config.readInterval}
-      , m_processor{led, buzzer, config} {}
+      , m_processor{led, buzzer, reporter, config} {}
 
 void WardenApp::run(const std::stop_token &appStopToken) {
   m_led.show(LedColor::Green, LedMode::Steady);
