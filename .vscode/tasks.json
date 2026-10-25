@@ -1,0 +1,59 @@
+// VS Code tasks for the host window: open the repository in VS Code without
+// "Reopen in Container", then Terminal > Run Task. They use Docker on the host.
+// See broker/README.md.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Broker: Start (dev)",
+      "type": "shell",
+      "command": "docker compose -f broker/dev/compose.yaml up -d --remove-orphans",
+      "problemMatcher": []
+    },
+    {
+      "label": "Broker: Start (dev TLS)",
+      "type": "shell",
+      "command": "docker compose -f broker/dev-tls/compose.yaml up -d --remove-orphans",
+      "problemMatcher": []
+    },
+    {
+      "label": "Broker: Explorer (course)",
+      "type": "shell",
+      "command": "docker compose -f broker/course/compose.yaml up -d --remove-orphans",
+      "problemMatcher": []
+    },
+    {
+      "label": "Broker: Check (dev TLS)",
+      "type": "shell",
+      "command": "docker compose -f broker/dev-tls/compose.yaml run --rm check",
+      "problemMatcher": []
+    },
+    {
+      // Its own project: it needs nothing that runs locally, so it leaves that alone.
+      "label": "Broker: Check (course)",
+      "type": "shell",
+      "command": "docker compose -p broker-check -f broker/course/compose.yaml run --rm check",
+      "problemMatcher": []
+    },
+    // All three setups are the Compose project "broker": starting one removes what
+    // another left running (--remove-orphans), and these work for whichever runs.
+    {
+      "label": "Broker: Stop",
+      "type": "shell",
+      "command": "docker compose -p broker down",
+      "problemMatcher": []
+    },
+    {
+      "label": "Broker: Restart",
+      "type": "shell",
+      "command": "docker compose -p broker restart",
+      "problemMatcher": []
+    },
+    {
+      "label": "Broker: Logs",
+      "type": "shell",
+      "command": "docker compose -p broker logs -f",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+// Dev Container for the device program (device/) — VS Code builds and runs inside this container.
+// See https://containers.dev/implementors/json_reference/ for all options.
+{
+  "name": "Device",
+
+  // Build the container from the Dockerfile in this directory.
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+
+  // Additional tools installed on top of the Dockerfile.
+  // common-utils adds colored bash prompt and git integration in the terminal.
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": false
+    }
+  },
+
+  // Extensions auto-installed inside the container.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    }
+  },
+
+  // Open only device/ — its own .vscode/ (tasks, launch, settings) then applies.
+  // The whole repository is still mounted, one level up.
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/device",
+
+  "remoteUser": "root"
+}

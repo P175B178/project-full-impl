@@ -1,0 +1,31 @@
+// VS Code tasks — run via Terminal > Run Task, or use shortcuts:
+//   Ctrl+Shift+B  → Build (default build task)
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build",
+      "type": "shell",
+      "command": "cmake --preset debug && cmake --build --preset debug",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Run",
+      "type": "shell",
+      "command": "./build/debug/desktop",
+      "dependsOn": "Build",
+      "problemMatcher": []
+    },
+    // ── Utilities ──
+    {
+      "label": "Clean all build directories",
+      "type": "shell",
+      "command": "rm -rf build/",
+      "problemMatcher": []
+    }
+  ]
+}

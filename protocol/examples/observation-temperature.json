@@ -1,0 +1,17 @@
+{
+  "resourceType": "Observation",
+  "deviceId": "group-1-pi5",
+  "status": "final",
+  "effectiveDateTime": "2026-01-02T03:04:05Z",
+  "code": {
+    "system": "http://loinc.org",
+    "code": "8310-5",
+    "display": "Body temperature"
+  },
+  "valueQuantity": {
+    "value": 23.4,
+    "unit": "°C",
+    "system": "http://unitsofmeasure.org",
+    "code": "Cel"
+  }
+}

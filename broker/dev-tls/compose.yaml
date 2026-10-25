@@ -1,0 +1,45 @@
+# Local broker like the course broker: TLS on port 8883, one user and password.
+# Needs files from Moodle, and .env: see README.md.
+name: broker
+
+services:
+  broker:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "8883:8883"
+    volumes:
+      - ./:/mosquitto/config # mosquitto.conf, start.sh and the files from Moodle
+      - broker-data:/mosquitto/data # retained messages survive a restart
+    entrypoint: ["sh", "/mosquitto/config/start.sh"]
+    restart: unless-stopped
+
+  explorer:
+    image: ghcr.io/thomasnordquist/mqtt-explorer:latest
+    environment:
+      MQTT_AUTO_CONNECT_HOST: broker
+      MQTT_AUTO_CONNECT_PORT: 8883
+      MQTT_AUTO_CONNECT_PROTOCOL: mqtts
+      MQTT_AUTO_CONNECT_USERNAME: ${BROKER_USER:?set it in broker/dev-tls/.env}
+      MQTT_AUTO_CONNECT_PASSWORD: ${BROKER_PASSWORD:?set it in broker/dev-tls/.env}
+      MQTT_EXPLORER_SKIP_AUTH: "true" # no login page for the web UI
+    ports:
+      - "3000:3000" # http://localhost:3000
+    depends_on:
+      - broker
+    restart: unless-stopped
+
+  # Task "Broker: Check (dev TLS)", with this broker running. Not started by "up".
+  check:
+    image: eclipse-mosquitto:latest
+    profiles: [tools]
+    environment:
+      BROKER_ADDRESS: broker # this broker, by a name its certificate lists
+      BROKER_USER: ${BROKER_USER:?set it in broker/dev-tls/.env}
+      BROKER_PASSWORD: ${BROKER_PASSWORD:?set it in broker/dev-tls/.env}
+    volumes:
+      - ../check.sh:/check.sh:ro
+      - ./certs:/certs:ro
+    entrypoint: ["sh", "/check.sh"]
+
+volumes:
+  broker-data:

@@ -1,0 +1,28 @@
+# Local broker without security: port 1883, anyone may connect. See ../README.md.
+name: broker
+
+services:
+  broker:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - broker-data:/mosquitto/data # retained messages survive a restart
+    restart: unless-stopped
+
+  explorer:
+    image: ghcr.io/thomasnordquist/mqtt-explorer:latest
+    environment:
+      MQTT_AUTO_CONNECT_HOST: broker
+      MQTT_AUTO_CONNECT_PORT: 1883
+      MQTT_AUTO_CONNECT_PROTOCOL: mqtt
+      MQTT_EXPLORER_SKIP_AUTH: "true" # no login page for the web UI
+    ports:
+      - "3000:3000" # http://localhost:3000
+    depends_on:
+      - broker
+    restart: unless-stopped
+
+volumes:
+  broker-data:

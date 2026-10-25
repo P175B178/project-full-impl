@@ -1,0 +1,12 @@
+{
+  // VS Code opens desktop/, but the git repository is the parent folder.
+  "git.openRepositoryInParentFolders": "always",
+
+  // CMake
+  "cmake.generator": "Ninja",
+  "cmake.configureOnOpen": true,
+  "cmake.configurePreset": "debug",
+
+  // C/C++ IntelliSense — driven by CMake Tools
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}

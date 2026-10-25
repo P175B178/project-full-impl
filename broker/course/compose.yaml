@@ -1,0 +1,31 @@
+# The course broker is run by the lecturer, not here. This stack only connects
+# to it, with your group's settings: MQTT Explorer, and the check of the settings.
+# Needs .env, and certs/ca.crt from Moodle: see README.md.
+name: broker
+
+services:
+  explorer:
+    image: ghcr.io/thomasnordquist/mqtt-explorer:latest
+    environment:
+      MQTT_AUTO_CONNECT_HOST: ${BROKER_ADDRESS:?set it in broker/course/.env}
+      MQTT_AUTO_CONNECT_PORT: 8883
+      MQTT_AUTO_CONNECT_PROTOCOL: mqtts
+      MQTT_AUTO_CONNECT_USERNAME: ${BROKER_USER:?set it in broker/course/.env}
+      MQTT_AUTO_CONNECT_PASSWORD: ${BROKER_PASSWORD:?set it in broker/course/.env}
+      MQTT_EXPLORER_SKIP_AUTH: "true" # no login page for the web UI
+    ports:
+      - "3000:3000" # http://localhost:3000
+    restart: unless-stopped
+
+  # Task "Broker: Check (course)". Not started by "up".
+  check:
+    image: eclipse-mosquitto:latest
+    profiles: [tools]
+    environment:
+      BROKER_ADDRESS: ${BROKER_ADDRESS:?set it in broker/course/.env}
+      BROKER_USER: ${BROKER_USER:?set it in broker/course/.env}
+      BROKER_PASSWORD: ${BROKER_PASSWORD:?set it in broker/course/.env}
+    volumes:
+      - ../check.sh:/check.sh:ro
+      - ./certs:/certs:ro
+    entrypoint: ["sh", "/check.sh"]

@@ -1,0 +1,67 @@
+// Dev Container for the desktop program (desktop/) — VS Code builds and runs inside this container.
+// See https://containers.dev/implementors/json_reference/ for all options.
+{
+  "name": "Desktop",
+
+  // Build the container from the Dockerfile in this directory.
+  // The first build takes a while: it downloads Qt and compiles QtMqtt.
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+
+  // Additional tools installed on top of the Dockerfile.
+  // common-utils adds a colored bash prompt and git integration in the terminal.
+  // desktop-lite runs a lightweight Linux desktop (Fluxbox) inside the container with a
+  // VNC + noVNC server, so Qt Widgets Designer and the app window are viewable in a browser
+  // tab (including VS Code's Simple Browser) — no X server needs installing on Windows.
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "vscode",
+      "webPort": "6080",
+      "vncPort": "5901"
+    }
+  },
+
+  // Open http://localhost:6080 (password: vscode) to see the desktop. In VS Code:
+  // Command Palette -> "Simple Browser: Show" -> http://localhost:6080
+  "forwardPorts": [6080, 5901],
+  "portsAttributes": {
+    "6080": { "label": "Desktop (noVNC)" },
+    "5901": { "label": "VNC" }
+  },
+
+  // Extensions auto-installed inside the container.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "theqtcompany.qt"
+      ],
+      // Point the Qt extension straight at the aqt install under /opt/qt, which its
+      // kit scan does not find on its own.
+      "settings": {
+        "qt-ui.customWidgetsDesignerExePath": "/opt/qt/6.8.2/gcc_64/bin/designer",
+        "qt-cpp.additionalQtPaths": ["/opt/qt/6.8.2/gcc_64/bin/qtpaths"]
+      }
+    }
+  },
+
+  // GUI apps render onto the in-container desktop-lite X display.
+  // Qt expects a UTF-8 locale and warns at startup without one.
+  "containerEnv": {
+    "DISPLAY": ":1",
+    "LANG": "C.UTF-8"
+  },
+
+  // Open only desktop/ — its own .vscode/ (tasks, launch, settings) then applies.
+  // The whole repository is still mounted, one level up.
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/desktop",
+
+  "remoteUser": "root"
+}
