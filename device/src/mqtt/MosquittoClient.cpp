@@ -13,7 +13,9 @@ namespace {
 
 // How often the client and the broker exchange a message to check that the connection is still
 // there, when nothing else is sent.
-constexpr int keepAliveSeconds = 60;
+constexpr int keepAliveSeconds                  = 60;
+// The longest wait between two attempts to connect.
+constexpr unsigned int maxReconnectDelaySeconds = 30;
 
 } // namespace
 
@@ -55,6 +57,10 @@ void MosquittoClient::setWill(const MqttMessage &will) {
 void MosquittoClient::connect(const MqttSettings &broker) {
   m_brokerName = std::format("{}:{}", broker.host, broker.port);
   spdlog::info("Connecting to MQTT broker {}", m_brokerName);
+
+  // After a failed attempt, wait 1 s before the next one, then twice as long after every further
+  // failure, up to 30 s.
+  mosquitto_reconnect_delay_set(m_handle.get(), 1, maxReconnectDelaySeconds, /*reconnect_exponential_backoff=*/true);
 
   // Only starts connecting; the network thread completes it, or keeps trying. Even when this fails
   // at once, for an unknown host name say, the thread tries again later: the name may resolve on
