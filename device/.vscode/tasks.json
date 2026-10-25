@@ -1,5 +1,6 @@
 // VS Code tasks — run via Terminal > Run Task, or use shortcuts:
 //   Ctrl+Shift+B  → Local: Build (default build task)
+//   "Tasks: Run Test Task" → Local: Run tests (default test task)
 {
   "version": "2.0.0",
   "tasks": [
@@ -19,6 +20,17 @@
       "command": "./build/debug/warden",
       "dependsOn": "Local: Build",
       "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Local: Run tests",
+      "type": "shell",
+      "command": "ctest --preset debug",
+      "dependsOn": "Local: Build",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     // ── Utilities ──

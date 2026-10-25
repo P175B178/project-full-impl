@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(BUILD_TESTING "Build the unit tests" ON)
+
 # Settings for this project's own targets, so third-party code keeps its own.
 function(warden_configure_target target)
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
@@ -39,3 +41,9 @@ warden_configure_target(warden_core)
 add_executable(warden src/main.cpp)
 target_link_libraries(warden PRIVATE warden_core)
 warden_configure_target(warden)
+
+# ── Tests ──
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

@@ -18,5 +18,14 @@
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" }
+  ],
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
   ]
 }
