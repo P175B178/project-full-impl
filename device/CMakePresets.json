@@ -60,6 +60,15 @@
         "CMAKE_CXX_COMPILER": "clang++",
         "ENABLE_CLANG_TIDY": "ON"
       }
+    },
+    {
+      "name": "clang-tidy-hardware",
+      "displayName": "Clang-Tidy — hardware drivers (host)",
+      "inherits": "clang-tidy",
+      "cacheVariables": {
+        "ENABLE_HARDWARE": "ON",
+        "BUILD_TESTING": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -67,7 +76,8 @@
     { "name": "release", "configurePreset": "release" },
     { "name": "pi-debug", "configurePreset": "pi-debug" },
     { "name": "pi-release", "configurePreset": "pi-release" },
-    { "name": "clang-tidy", "configurePreset": "clang-tidy", "cleanFirst": true }
+    { "name": "clang-tidy", "configurePreset": "clang-tidy", "cleanFirst": true },
+    { "name": "clang-tidy-hardware", "configurePreset": "clang-tidy-hardware", "cleanFirst": true }
   ],
   "testPresets": [
     {
@@ -95,6 +105,14 @@
       "steps": [
         { "type": "configure", "name": "clang-tidy" },
         { "type": "build",     "name": "clang-tidy" }
+      ]
+    },
+    {
+      "name": "tidy-hardware",
+      "displayName": "Tidy — hardware drivers, built and analyzed on the host",
+      "steps": [
+        { "type": "configure", "name": "clang-tidy-hardware" },
+        { "type": "build",     "name": "clang-tidy-hardware" }
       ]
     },
     {

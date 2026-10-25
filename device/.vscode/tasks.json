@@ -108,13 +108,20 @@
       // All the checks in one task.
       "label": "Workflow: Verify",
       "type": "shell",
-      "command": "cmake --preset debug && cmake --build --preset debug --target format-check && cmake --workflow --preset tidy && cmake --build --preset debug && ctest --preset debug && cmake --workflow --preset release",
+      "command": "cmake --preset debug && cmake --build --preset debug --target format-check && cmake --workflow --preset tidy && cmake --build --preset debug && ctest --preset debug && cmake --workflow --preset release && cmake --workflow --preset tidy-hardware",
       "problemMatcher": ["$gcc"]
     },
     {
       "label": "Workflow: Tidy",
       "type": "shell",
       "command": "cmake --workflow --preset tidy",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      // Builds and lints the Raspberry Pi drivers on this machine; no Pi needed.
+      "label": "Workflow: Tidy hardware drivers",
+      "type": "shell",
+      "command": "cmake --workflow --preset tidy-hardware",
       "problemMatcher": ["$gcc"]
     },
     {
