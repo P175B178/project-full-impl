@@ -69,3 +69,31 @@ jobs:
 
       - name: Build hardware drivers with clang-tidy
         run: cmake --workflow --preset tidy-hardware
+
+  # Cross-compiles the Pi release build and packages it, as the Workflow: Package
+  # task does. The .deb can be downloaded from the run's summary page.
+  package:
+    runs-on: ubuntu-24.04
+    container: debian:13-slim
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies, including the arm64 cross toolchain
+        run: |
+          dpkg --add-architecture arm64
+          apt-get update && apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build git ca-certificates \
+            pkgconf gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgpiod-dev:arm64
+
+      - name: Build the Pi package
+        run: cmake --workflow --preset package
+
+      - name: Keep the .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: warden-deb
+          path: device/package/*.deb
+          retention-days: 14

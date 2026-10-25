@@ -145,6 +145,8 @@ sudo apt install ./warden_1.0.0_arm64.deb                 # on the Pi
 It installs `/usr/bin/warden` and its config, `/etc/warden/warden.toml`; upgrading keeps your
 changes to the config.
 
+CI builds the package too: download the `.deb` from the run's summary page on GitHub.
+
 ---
 
 ## Utilities
