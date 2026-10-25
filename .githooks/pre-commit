@@ -1,0 +1,46 @@
+#!/bin/bash
+# Runs before every commit. Skip with: git commit --no-verify
+#
+# Checks that the staged C++ files are formatted with clang-format. A file without
+# unstaged changes is formatted for you to review and stage; others are left alone.
+set -euo pipefail
+
+if ! command -v clang-format &>/dev/null; then
+    echo "pre-commit: clang-format not found, skipping format check"
+    exit 0
+fi
+
+# Only device/ is checked: the .clang-format that applies is device/.clang-format.
+mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR -- 'device/*.cpp' 'device/*.h')
+if [ ${#files[@]} -eq 0 ]; then
+    exit 0
+fi
+
+echo "pre-commit: checking formatting of ${#files[@]} staged file(s)..."
+
+unformatted=()
+for file in "${files[@]}"; do
+    # ":$file" is the staged version of the file.
+    if ! git show ":$file" | clang-format --dry-run --Werror --assume-filename="$file" &>/dev/null; then
+        unformatted+=("$file")
+    fi
+done
+
+if [ ${#unformatted[@]} -eq 0 ]; then
+    echo "pre-commit: OK"
+    exit 0
+fi
+
+echo ""
+echo "Formatting errors found:"
+for file in "${unformatted[@]}"; do
+    if git diff --quiet -- "$file"; then
+        clang-format -i "$file"
+        echo "  $file — reformatted"
+    else
+        echo "  $file — has unstaged changes, left alone; run: clang-format -i $file"
+    fi
+done
+echo ""
+echo "Review and stage the formatted files, then commit again."
+exit 1

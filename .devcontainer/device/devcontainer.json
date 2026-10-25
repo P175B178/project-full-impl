@@ -28,6 +28,8 @@
     }
   },
 
+  "postCreateCommand": "git config core.hooksPath .githooks",
+
   // Open only device/ — its own .vscode/ (tasks, launch, settings) then applies.
   // The whole repository is still mounted, one level up.
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/device",
