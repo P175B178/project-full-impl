@@ -1,4 +1,5 @@
 #include "core/AveragingBuffer.h"
+#include "core/Config.h"
 #include "core/SignalTransition.h"
 #include "core/StateMachine.h"
 #include "sim/ConsoleBuzzer.h"
@@ -11,11 +12,11 @@
 #include <chrono>
 #include <condition_variable>
 #include <csignal>
-#include <cstddef>
 #include <cstdlib>
 #include <exception>
 #include <mutex>
 #include <stop_token>
+#include <string_view>
 #include <thread>
 
 // Everything except main() is internal to this file.
@@ -56,20 +57,31 @@ std::jthread watchForStopSignals(std::stop_source &appStop) {
 
 // ── Entry point ──────────────────────────────────────────────────────────────
 int runApp() {
-  constexpr auto readInterval           = 5s;
-  constexpr std::size_t averagingWindow = 10;
+  constexpr std::string_view configPath = "config/warden.toml";
 
   std::stop_source appStop;
   const auto signalWatcher = watchForStopSignals(appStop);
   const auto stopToken     = appStop.get_token();
 
+  const auto configResult = warden::loadConfig(configPath);
+  if (!configResult) {
+    spdlog::error("Failed to load config '{}': {}", configPath, configResult.error());
+    return EXIT_FAILURE;
+  }
+  const auto &config = *configResult;
+
+  spdlog::info("Warden starting — config: {}", configPath);
+  spdlog::info("Temperature threshold: {:.1f} °C, humidity threshold: {:.1f}%", config.thresholds.temperature,
+               config.thresholds.humidity);
+  spdlog::info("Read interval: {}s, averaging window: {} readings", config.readInterval.count(),
+               config.averagingWindow);
+
   warden::sim::SimulatedSensor sensor;
   warden::sim::ConsoleLed led;
   warden::sim::ConsoleBuzzer buzzer;
-  warden::StateMachine stateMachine{warden::Thresholds{}};
-  warden::AveragingBuffer<float> temperatureBuffer{averagingWindow};
-  warden::AveragingBuffer<float> humidityBuffer{averagingWindow};
-  spdlog::info("Warden starting — simulated sensor");
+  warden::StateMachine stateMachine{config.thresholds};
+  warden::AveragingBuffer<float> temperatureBuffer{config.averagingWindow};
+  warden::AveragingBuffer<float> humidityBuffer{config.averagingWindow};
   spdlog::info("Running — press Ctrl-C to stop");
 
   led.show(warden::LedColor::Green, warden::LedMode::Steady);
@@ -104,7 +116,7 @@ int runApp() {
 
     // Sleeps after failed reads too, so broken hardware is not hammered.
     std::unique_lock lock{sleepMutex};
-    sleepCv.wait_for(lock, stopToken, readInterval, [] { return false; });
+    sleepCv.wait_for(lock, stopToken, config.readInterval, [] { return false; });
   }
 
   led.turnOff();

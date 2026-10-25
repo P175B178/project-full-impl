@@ -10,6 +10,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(warden_tests
     test_averaging.cpp
+    test_config.cpp
     test_signal_transition.cpp
     test_state_machine.cpp
 )
@@ -18,6 +19,10 @@ target_link_libraries(warden_tests PRIVATE
     warden_core
     GTest::gtest_main
     GTest::gmock
+)
+
+target_compile_definitions(warden_tests PRIVATE
+    WARDEN_CONFIG_FILE="${PROJECT_SOURCE_DIR}/config/warden.toml"
 )
 
 warden_configure_target(warden_tests)

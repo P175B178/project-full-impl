@@ -1,0 +1,19 @@
+# Warden — Configuration
+# Missing settings fall back to the defaults shown here, and so do misspelled
+# ones and values of the wrong type: that includes a fraction where a whole
+# number is expected, and a negative count. Other values outside the limits
+# given below stop warden from starting.
+
+# How often to read the sensor, in seconds: 2 to 3600
+# (the DHT22 needs 2 s between readings)
+read_interval_s = 5
+
+# How many readings to average before evaluating thresholds: 1 to 1000
+averaging_window = 10
+
+[thresholds]
+# A value strictly greater than its threshold is exceeded:
+# one exceeded value means Warning, both mean Alert.
+# Humidity is relative humidity in %, so 0 to 100.
+temperature = 28.0
+humidity    = 70.0

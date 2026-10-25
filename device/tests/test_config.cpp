@@ -1,0 +1,144 @@
+#include "Config.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <random>
+#include <string>
+#include <string_view>
+
+using namespace warden;
+using ::testing::HasSubstr;
+
+namespace {
+
+/// Writes TOML to a temporary file, removed afterwards. A random name keeps test runs going on at
+/// the same time apart.
+class TempConfigFile {
+public:
+  explicit TempConfigFile(std::string_view content)
+        : m_path{std::filesystem::temp_directory_path() /
+                 std::format("warden-{}-{}.toml",
+                             ::testing::UnitTest::GetInstance()->current_test_info()->name(),
+                             std::random_device{}())} {
+    std::ofstream{m_path} << content;
+  }
+  ~TempConfigFile() { std::filesystem::remove(m_path); }
+
+  TempConfigFile(const TempConfigFile &)            = delete;
+  TempConfigFile &operator=(const TempConfigFile &) = delete;
+  TempConfigFile(TempConfigFile &&)                 = delete;
+  TempConfigFile &operator=(TempConfigFile &&)      = delete;
+
+  [[nodiscard]] std::string string() const { return m_path.string(); }
+
+private:
+  std::filesystem::path m_path;
+};
+
+} // namespace
+
+TEST(LoadConfigTest, EmptyFileUsesDefaults) {
+  const TempConfigFile file{""};
+  const auto result = loadConfig(file.string());
+  ASSERT_TRUE(result.has_value()) << result.error();
+
+  const Config defaults{};
+  EXPECT_EQ(result->readInterval, defaults.readInterval);
+  EXPECT_EQ(result->averagingWindow, defaults.averagingWindow);
+  EXPECT_FLOAT_EQ(result->thresholds.temperature, defaults.thresholds.temperature);
+  EXPECT_FLOAT_EQ(result->thresholds.humidity, defaults.thresholds.humidity);
+}
+
+TEST(LoadConfigTest, ReadsAllValues) {
+  const TempConfigFile file{R"(
+read_interval_s  = 2
+averaging_window = 4
+
+[thresholds]
+temperature = 25.5
+humidity    = 60.0
+)"};
+  const auto result = loadConfig(file.string());
+  ASSERT_TRUE(result.has_value()) << result.error();
+
+  EXPECT_EQ(result->readInterval, std::chrono::seconds{2});
+  EXPECT_EQ(result->averagingWindow, 4U);
+  EXPECT_FLOAT_EQ(result->thresholds.temperature, 25.5F);
+  EXPECT_FLOAT_EQ(result->thresholds.humidity, 60.0F);
+}
+
+TEST(LoadConfigTest, MissingFileIsAnError) {
+  const auto result = loadConfig("/nonexistent/warden.toml");
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST(LoadConfigTest, MalformedTomlIsAnError) {
+  const TempConfigFile file{"read_interval_s = = 5"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value());
+}
+
+TEST(LoadConfigTest, ZeroReadIntervalIsRejected) {
+  const TempConfigFile file{"read_interval_s = 0"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value());
+}
+
+TEST(LoadConfigTest, NegativeReadIntervalIsRejected) {
+  const TempConfigFile file{"read_interval_s = -5"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value());
+}
+
+TEST(LoadConfigTest, ZeroAveragingWindowIsRejected) {
+  const TempConfigFile file{"averaging_window = 0"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value());
+}
+
+TEST(LoadConfigTest, TooShortReadIntervalIsRejected) {
+  const TempConfigFile file{"read_interval_s = 1"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("read_interval_s"));
+}
+
+TEST(LoadConfigTest, TooLongReadIntervalIsRejected) {
+  const TempConfigFile file{"read_interval_s = 3601"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("read_interval_s"));
+}
+
+TEST(LoadConfigTest, TooLargeAveragingWindowIsRejected) {
+  const TempConfigFile file{"averaging_window = 1001"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("averaging_window"));
+}
+
+TEST(LoadConfigTest, HumidityThresholdAbove100IsRejected) {
+  const TempConfigFile file{"[thresholds]\nhumidity = 101"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("thresholds.humidity"));
+}
+
+TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
+  // WARDEN_CONFIG_FILE is defined in tests/CMakeLists.txt as config/warden.toml.
+  const auto result = loadConfig(WARDEN_CONFIG_FILE);
+  ASSERT_TRUE(result.has_value()) << result.error();
+
+  const Config defaults;
+  EXPECT_EQ(result->readInterval, defaults.readInterval);
+  EXPECT_EQ(result->averagingWindow, defaults.averagingWindow);
+  EXPECT_FLOAT_EQ(result->thresholds.temperature, defaults.thresholds.temperature);
+  EXPECT_FLOAT_EQ(result->thresholds.humidity, defaults.thresholds.humidity);
+}
+
+TEST(LoadConfigTest, WholeNumberIsAcceptedForDecimalSetting) {
+  const TempConfigFile file{"[thresholds]\ntemperature = 30"};
+  const auto result = loadConfig(file.string());
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_FLOAT_EQ(result->thresholds.temperature, 30.0F);
+}

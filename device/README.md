@@ -43,6 +43,13 @@ ctest --preset debug
 
 ---
 
+## Configuration
+
+`warden` reads its settings from `config/warden.toml`, which documents every setting. A
+misspelled setting falls back to its default, so check the startup log after editing the file.
+
+---
+
 ## Utilities
 
 ### Formatting
