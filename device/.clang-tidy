@@ -1,0 +1,39 @@
+# Whole check groups are enabled; the three exceptions:
+# modernize-use-trailing-return-type: would turn every int f() into
+#   auto f() -> int, an unusual style that reads worse
+# cppcoreguidelines-avoid-magic-numbers: an alias of readability-magic-numbers,
+#   which stays enabled
+# performance-enum-size: shrinking enums to std::uint8_t saves a few bytes we
+#   do not need, and the extra ': std::uint8_t' is noise for C++ beginners
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  readability-*,
+  performance-*,
+  bugprone-*,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -performance-enum-size
+
+# Every finding fails the build, so findings cannot pile up unnoticed.
+WarningsAsErrors: "*"
+CheckOptions:
+  # Classes use UpperCamelCase:  StateMachine, ConsoleLed
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  # Functions and variables use lowerCamelCase:  state(), lastRead
+  # Note: clang-tidy calls this 'camelBack', not 'camelCase'
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  # Private and protected members start with m_:  m_state, read by state()
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: m_
+  # Namespaces use lower_case:  warden::hardware
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case

@@ -6,12 +6,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(ENABLE_CLANG_TIDY "Run clang-tidy on every translation unit during build" OFF)
 option(BUILD_TESTING "Build the unit tests" ON)
+
+if(ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE clang-tidy REQUIRED)
+endif()
 
 # Settings for this project's own targets, so third-party code keeps its own.
 function(warden_configure_target target)
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
     set_target_properties(${target} PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+    if(ENABLE_CLANG_TIDY)
+        set_target_properties(${target} PROPERTIES
+            CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--header-filter=^${PROJECT_SOURCE_DIR}/(include|src|tests)/")
+    endif()
 endfunction()
 
 # ── Dependencies ──

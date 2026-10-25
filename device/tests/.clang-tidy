@@ -1,0 +1,13 @@
+InheritParentConfig: true
+
+# cppcoreguidelines-avoid-do-while: gtest macros expand to do-while loops.
+# readability-function-cognitive-complexity: gtest macros inflate the score.
+# bugprone-unchecked-optional-access: tidy cannot see that ASSERT ends the test.
+# readability-magic-numbers: literals in tests are expected values.
+# readability-identifier-length: a test is short, so short names are clear.
+Checks: >
+  -cppcoreguidelines-avoid-do-while,
+  -readability-function-cognitive-complexity,
+  -bugprone-unchecked-optional-access,
+  -readability-magic-numbers,
+  -readability-identifier-length
