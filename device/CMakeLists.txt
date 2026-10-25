@@ -55,7 +55,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(CLI11)
 
-# ── Core library (no hardware deps, testable on host) ──
+# System libraries are found through pkg-config.
+find_package(PkgConfig REQUIRED)
+
+# ── Core library (no hardware, no MQTT: testable on host) ──
 add_library(warden_core
     src/core/Config.cpp
     src/core/ReadingProcessor.cpp
@@ -70,7 +73,6 @@ warden_configure_target(warden_core)
 # ── Hardware drivers ──
 if(ENABLE_HARDWARE)
     # libgpiod 2 replaced the whole API: version 1 would give confusing compile errors.
-    find_package(PkgConfig REQUIRED)
     pkg_check_modules(GPIOD REQUIRED IMPORTED_TARGET libgpiod>=2)
 
     add_library(warden_hardware
@@ -84,12 +86,23 @@ if(ENABLE_HARDWARE)
     warden_configure_target(warden_hardware)
 endif()
 
+# ── MQTT ──
+# Everything warden does over MQTT. Also in the simulation: warden always connects to a broker.
+pkg_check_modules(MOSQUITTO REQUIRED IMPORTED_TARGET libmosquitto)
+
+add_library(warden_mqtt
+    src/mqtt/MosquittoClient.cpp
+)
+target_include_directories(warden_mqtt PUBLIC src/mqtt)
+target_link_libraries(warden_mqtt PUBLIC warden_core PkgConfig::MOSQUITTO)
+warden_configure_target(warden_mqtt)
+
 # ── Main executable ──
 # main.cpp includes the header-only simulation classes in src/sim.
 add_executable(warden src/main.cpp)
 # Inject project version so --version can report it without hardcoding.
 target_compile_definitions(warden PRIVATE WARDEN_VERSION="${PROJECT_VERSION}")
-target_link_libraries(warden PRIVATE warden_core CLI11::CLI11)
+target_link_libraries(warden PRIVATE warden_core warden_mqtt CLI11::CLI11)
 warden_configure_target(warden)
 if(ENABLE_HARDWARE)
     target_link_libraries(warden PRIVATE warden_hardware)
@@ -119,7 +132,7 @@ if(ENABLE_HARDWARE)
     list(APPEND CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "warden")
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgpiod3") # libgpiod v2 API = libgpiod.so.3
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgpiod3, libmosquitto1") # libgpiod v2 API = libgpiod.so.3
     # CPack labels the .deb with the architecture of the machine that builds it
     # (dpkg --print-architecture), which is wrong when cross-compiling for the Pi.
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")

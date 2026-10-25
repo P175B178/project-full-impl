@@ -15,13 +15,15 @@ RUN dpkg --add-architecture arm64 \
     ninja-build \
     clang-format \
     clang-tidy \
-    # ── Hardware libraries (found through pkg-config) ──
+    # ── Libraries (found through pkg-config) ──
     pkgconf \
     libgpiod-dev \
+    libmosquitto-dev \
     # ── Cross-compilation (Raspberry Pi 5 / aarch64) ──
     gcc-aarch64-linux-gnu \
     g++-aarch64-linux-gnu \
     libgpiod-dev:arm64 \
+    libmosquitto-dev:arm64 \
     # ── Debugging (gdb 16.3) ──
     gdb \
     gdb-multiarch \

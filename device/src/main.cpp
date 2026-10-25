@@ -1,5 +1,6 @@
 #include "core/Config.h"
 #include "core/WardenApp.h"
+#include "mqtt/MosquittoClient.h"
 
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
@@ -83,7 +84,8 @@ std::expected<CommandLine, int> parseCommandLine(int argc, char **argv) {
 }
 
 // ── Monitoring ───────────────────────────────────────────────────────────────
-/// Constructs the sensor, LED and buzzer and runs the monitoring loop until stopToken is signalled.
+/// Constructs the sensor, LED and buzzer, connects to the broker and runs the monitoring loop until
+/// stopToken is signalled.
 void runMonitoring(const warden::Config &config, const std::stop_token &stopToken) {
 #ifdef ENABLE_HARDWARE
   warden::hardware::Dht22Sensor sensor;
@@ -95,6 +97,10 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
   warden::sim::ConsoleLed led;
   warden::sim::ConsoleBuzzer buzzer;
 #endif
+
+  // The broker on this computer, as seen from the dev container.
+  warden::mqtt::MosquittoClient mqttClient;
+  mqttClient.connect({.host = "host.docker.internal"});
 
   spdlog::info("Running — press Ctrl-C to stop");
 

@@ -27,7 +27,8 @@ sudo apt-get install -y --no-install-recommends \
   rsync \
   gdbserver \
   libgpiod3 \
-  gpiod
+  gpiod \
+  libmosquitto1
 
 echo "==> Creating app directory"
 mkdir -p "$HOME/apps/warden/config"

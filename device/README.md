@@ -52,6 +52,18 @@ file.
 
 ---
 
+## MQTT broker
+
+Run the broker on your computer: open the repository in a VS Code window on the host and run the
+task **Broker: Start (dev)** (see [`broker/`](../broker/README.md)).
+
+Start it before `warden`, which stops if it cannot reach the broker.
+
+The broker's address is fixed to `host.docker.internal`, this computer as seen from the dev
+container, so `warden` runs only there.
+
+---
+
 ## Raspberry Pi
 
 ### One-time setup

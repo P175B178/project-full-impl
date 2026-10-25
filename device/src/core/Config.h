@@ -20,6 +20,12 @@ struct PlausibleValues {
   Range humidity{.min = 0.0F, .max = 100.0F};
 };
 
+/// The broker to connect to.
+struct MqttSettings {
+  std::string host;
+  int port{1883}; // the standard MQTT port
+};
+
 /// All runtime configuration: mirrors config/warden.toml, one struct per [section].
 struct Config {
   std::chrono::seconds readInterval{5};

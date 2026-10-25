@@ -33,7 +33,7 @@ jobs:
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build git ca-certificates \
-            clang clang-format clang-tidy
+            clang clang-format clang-tidy pkgconf libmosquitto-dev
 
       - name: Check formatting
         run: |
@@ -65,7 +65,7 @@ jobs:
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build git ca-certificates \
-            clang clang-tidy pkgconf libgpiod-dev
+            clang clang-tidy pkgconf libgpiod-dev libmosquitto-dev
 
       - name: Build hardware drivers with clang-tidy
         run: cmake --workflow --preset tidy-hardware
@@ -86,7 +86,7 @@ jobs:
           dpkg --add-architecture arm64
           apt-get update && apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build git ca-certificates \
-            pkgconf gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgpiod-dev:arm64
+            pkgconf gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgpiod-dev:arm64 libmosquitto-dev:arm64
 
       - name: Build the Pi package
         run: cmake --workflow --preset package
