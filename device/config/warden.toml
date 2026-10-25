@@ -14,6 +14,16 @@ averaging_window = 10
 [thresholds]
 # A value strictly greater than its threshold is exceeded:
 # one exceeded value means Warning, both mean Alert.
-# Humidity is relative humidity in %, so 0 to 100.
+# Humidity is relative humidity in %, so 0 to 100. Each threshold must lie
+# within its [plausible_values] below. At the range's maximum, it is never exceeded.
 temperature = 28.0
 humidity    = 70.0
+
+[plausible_values]
+# Readings outside these ranges are skipped as implausible for this site.
+# The DHT22 itself measures -40..80 C and 0..100 %, so these should be the same
+# or narrower.
+min_temperature =   0.0
+max_temperature =  50.0
+min_humidity    =   0.0
+max_humidity    = 100.0

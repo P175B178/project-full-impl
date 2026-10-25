@@ -51,6 +51,10 @@ TEST(LoadConfigTest, EmptyFileUsesDefaults) {
   EXPECT_EQ(result->averagingWindow, defaults.averagingWindow);
   EXPECT_FLOAT_EQ(result->thresholds.temperature, defaults.thresholds.temperature);
   EXPECT_FLOAT_EQ(result->thresholds.humidity, defaults.thresholds.humidity);
+  EXPECT_FLOAT_EQ(result->plausibleValues.temperature.min, defaults.plausibleValues.temperature.min);
+  EXPECT_FLOAT_EQ(result->plausibleValues.temperature.max, defaults.plausibleValues.temperature.max);
+  EXPECT_FLOAT_EQ(result->plausibleValues.humidity.min, defaults.plausibleValues.humidity.min);
+  EXPECT_FLOAT_EQ(result->plausibleValues.humidity.max, defaults.plausibleValues.humidity.max);
 }
 
 TEST(LoadConfigTest, ReadsAllValues) {
@@ -61,6 +65,12 @@ averaging_window = 4
 [thresholds]
 temperature = 25.5
 humidity    = 60.0
+
+[plausible_values]
+min_temperature = -10.0
+max_temperature =  50.0
+min_humidity    =   5.0
+max_humidity    =  95.0
 )"};
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
@@ -69,6 +79,10 @@ humidity    = 60.0
   EXPECT_EQ(result->averagingWindow, 4U);
   EXPECT_FLOAT_EQ(result->thresholds.temperature, 25.5F);
   EXPECT_FLOAT_EQ(result->thresholds.humidity, 60.0F);
+  EXPECT_FLOAT_EQ(result->plausibleValues.temperature.min, -10.0F);
+  EXPECT_FLOAT_EQ(result->plausibleValues.temperature.max, 50.0F);
+  EXPECT_FLOAT_EQ(result->plausibleValues.humidity.min, 5.0F);
+  EXPECT_FLOAT_EQ(result->plausibleValues.humidity.max, 95.0F);
 }
 
 TEST(LoadConfigTest, MissingFileIsAnError) {
@@ -124,6 +138,30 @@ TEST(LoadConfigTest, HumidityThresholdAbove100IsRejected) {
   EXPECT_THAT(result.error(), HasSubstr("thresholds.humidity"));
 }
 
+TEST(LoadConfigTest, InvertedTemperatureBoundsAreRejected) {
+  const TempConfigFile file{"[plausible_values]\nmin_temperature = 50.0\nmax_temperature = 10.0"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value());
+}
+
+TEST(LoadConfigTest, InvertedHumidityBoundsAreRejected) {
+  const TempConfigFile file{"[plausible_values]\nmin_humidity = 90.0\nmax_humidity = 10.0"};
+  EXPECT_FALSE(loadConfig(file.string()).has_value());
+}
+
+TEST(LoadConfigTest, PlausibleHumidityAbove100IsRejected) {
+  const TempConfigFile file{"[plausible_values]\nmax_humidity = 120.0"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("max_humidity"));
+}
+
+TEST(LoadConfigTest, ThresholdOutsidePlausibleValuesIsRejected) {
+  const TempConfigFile file{"[plausible_values]\nmax_temperature = 25.0"}; // below the 28 C threshold
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("thresholds.temperature"));
+}
+
 TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
   // WARDEN_CONFIG_FILE is defined in tests/CMakeLists.txt as config/warden.toml.
   const auto result = loadConfig(WARDEN_CONFIG_FILE);
@@ -134,6 +172,10 @@ TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
   EXPECT_EQ(result->averagingWindow, defaults.averagingWindow);
   EXPECT_FLOAT_EQ(result->thresholds.temperature, defaults.thresholds.temperature);
   EXPECT_FLOAT_EQ(result->thresholds.humidity, defaults.thresholds.humidity);
+  EXPECT_FLOAT_EQ(result->plausibleValues.temperature.min, defaults.plausibleValues.temperature.min);
+  EXPECT_FLOAT_EQ(result->plausibleValues.temperature.max, defaults.plausibleValues.temperature.max);
+  EXPECT_FLOAT_EQ(result->plausibleValues.humidity.min, defaults.plausibleValues.humidity.min);
+  EXPECT_FLOAT_EQ(result->plausibleValues.humidity.max, defaults.plausibleValues.humidity.max);
 }
 
 TEST(LoadConfigTest, WholeNumberIsAcceptedForDecimalSetting) {
@@ -141,4 +183,18 @@ TEST(LoadConfigTest, WholeNumberIsAcceptedForDecimalSetting) {
   const auto result = loadConfig(file.string());
   ASSERT_TRUE(result.has_value()) << result.error();
   EXPECT_FLOAT_EQ(result->thresholds.temperature, 30.0F);
+}
+
+TEST(LoadConfigTest, NanIsAnError) {
+  const TempConfigFile file{"[thresholds]\ntemperature = nan"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("thresholds.temperature"));
+}
+
+TEST(LoadConfigTest, InfinityIsAnError) {
+  const TempConfigFile file{"[thresholds]\nhumidity = inf"};
+  const auto result = loadConfig(file.string());
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), HasSubstr("thresholds.humidity"));
 }

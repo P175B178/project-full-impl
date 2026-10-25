@@ -102,6 +102,9 @@ int runApp(int argc, char **argv) {
                config.thresholds.humidity);
   spdlog::info("Read interval: {}s, averaging window: {} readings", config.readInterval.count(),
                config.averagingWindow);
+  spdlog::info("Plausible range: temp [{:.1f}, {:.1f}] °C  hum [{:.1f}, {:.1f}]%",
+               config.plausibleValues.temperature.min, config.plausibleValues.temperature.max,
+               config.plausibleValues.humidity.min, config.plausibleValues.humidity.max);
 
   warden::sim::SimulatedSensor sensor;
   warden::sim::ConsoleLed led;
@@ -123,6 +126,12 @@ int runApp(int argc, char **argv) {
 
     if (!result) {
       spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
+    } else if (!config.plausibleValues.temperature.contains(result->temperature) ||
+               !config.plausibleValues.humidity.contains(result->humidity)) {
+      // Values the sensor can produce but that are implausible for this site, as configured in
+      // [plausible_values], are skipped.
+      spdlog::warn("Reading outside plausible range (temp={:.1f}, hum={:.1f}) — skipping", result->temperature,
+                   result->humidity);
     } else {
       temperatureBuffer.push(result->temperature);
       humidityBuffer.push(result->humidity);
