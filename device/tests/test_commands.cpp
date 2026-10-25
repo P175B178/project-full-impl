@@ -5,6 +5,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <string>
 
 using namespace warden::mqtt;
@@ -51,4 +52,31 @@ TEST(ParseThresholdTest, RejectsAMissingOrWrongUnit) {
 
 TEST(ParseThresholdTest, RejectsAValueNoFloatHolds) {
   EXPECT_THAT(parseTemperatureThreshold(R"({"value": 1e300, "unit": "°C"})").error(), HasSubstr("out of range"));
+}
+
+// ── parseInterval ───────────────────────────────────────────────────────────
+
+TEST(ParseIntervalTest, ReadsTheProtocolsExample) {
+  const auto interval = parseInterval(protocolExample("config-interval.json").dump());
+  ASSERT_TRUE(interval.has_value()) << interval.error();
+  EXPECT_EQ(*interval, std::chrono::seconds{5});
+}
+
+TEST(ParseIntervalTest, ReadsAWholeNumberWrittenWithADecimalPoint) {
+  EXPECT_EQ(parseInterval(R"({"seconds": 5.0})").value(), std::chrono::seconds{5});
+}
+
+TEST(ParseIntervalTest, RejectsANumberTooLargeForSeconds) {
+  EXPECT_THAT(parseInterval(R"({"seconds": 1e300})").error(), HasSubstr(R"("seconds" must be a whole number)"));
+}
+
+TEST(ParseIntervalTest, RejectsAMissingOrFractionalValue) {
+  EXPECT_THAT(parseInterval("{}").error(), HasSubstr(R"("seconds" must be a whole number)"));
+  EXPECT_THAT(parseInterval(R"({"seconds": 2.5})").error(), HasSubstr(R"("seconds" must be a whole number)"));
+  EXPECT_THAT(parseInterval(R"({"seconds": "5"})").error(), HasSubstr(R"("seconds" must be a whole number)"));
+}
+
+TEST(ParseIntervalTest, RejectsWhatIsNotAJsonObject) {
+  EXPECT_THAT(parseInterval("5").error(), HasSubstr("not a JSON object"));
+  EXPECT_THAT(parseInterval("{").error(), HasSubstr("not valid JSON"));
 }

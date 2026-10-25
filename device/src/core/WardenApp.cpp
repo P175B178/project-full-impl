@@ -1,5 +1,7 @@
 #include "WardenApp.h"
 
+#include <spdlog/spdlog.h>
+
 #include <condition_variable>
 #include <mutex>
 #include <stop_token>
@@ -39,6 +41,7 @@ void WardenApp::run(const std::stop_token &appStopToken) {
             [this](ReportStateAgain /*request*/) { m_processor.reportState(); },
             [this](const NewTemperatureThreshold &command) { m_processor.setTemperatureThreshold(command.threshold); },
             [this](const NewHumidityThreshold &command) { m_processor.setHumidityThreshold(command.threshold); },
+            [this](const NewInterval &command) { applyReadInterval(command.interval); },
         },
         *event);
   }
@@ -55,18 +58,38 @@ void WardenApp::setTemperatureThreshold(float threshold) {
 
 void WardenApp::setHumidityThreshold(float threshold) { m_events.push(NewHumidityThreshold{.threshold = threshold}); }
 
-void WardenApp::sensorLoop(const std::stop_token &stopToken) {
-  // C++20 has no sleep_for() that takes a stop_token, but condition_variable_any::wait_for() does:
-  // a stop request ends the wait. The predicate is never true, so nothing else does.
-  std::mutex sleepMutex;
-  std::condition_variable_any sleepCv;
+void WardenApp::setReadInterval(std::chrono::seconds interval) { m_events.push(NewInterval{.interval = interval}); }
 
+void WardenApp::applyReadInterval(std::chrono::seconds interval) {
+  if (!isUsableReadInterval(interval)) {
+    spdlog::warn("Ignored the new read interval {} s: it must be between {} and {} s", interval.count(),
+                 minReadInterval.count(), maxReadInterval.count());
+    return;
+  }
+  {
+    const std::scoped_lock lock{m_intervalMutex};
+    m_readInterval = interval;
+  }
+  spdlog::info("New read interval: {} s", interval.count());
+  m_intervalChanged.notify_one();
+}
+
+void WardenApp::sensorLoop(const std::stop_token &stopToken) {
   while (!stopToken.stop_requested()) {
     m_events.push(m_sensor.read());
 
-    // Sleeps after failed reads too, so broken hardware is not hammered.
-    std::unique_lock lock{sleepMutex};
-    sleepCv.wait_for(lock, stopToken, m_readInterval, [] { return false; });
+    const auto lastRead = std::chrono::steady_clock::now();
+
+    // Sleeps after failed reads too, so broken hardware is not hammered. C++20 has no sleep_for()
+    // that takes a stop_token, but condition_variable_any does: a stop request ends the wait. So
+    // does a new interval, which then counts from the last read, so the DHT22 still gets its 2 s
+    // between reads.
+    std::unique_lock lock{m_intervalMutex};
+    auto interval = m_readInterval;
+    while (m_intervalChanged.wait_until(lock, stopToken, lastRead + interval,
+                                        [this, interval] { return m_readInterval != interval; })) {
+      interval = m_readInterval;
+    }
   }
 }
 

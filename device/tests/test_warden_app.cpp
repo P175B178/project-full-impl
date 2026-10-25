@@ -10,8 +10,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
 #include <expected>
 #include <stop_token>
+#include <utility>
 
 using namespace warden;
 using namespace warden::test;
@@ -32,6 +35,24 @@ public:
 
 private:
   std::expected<Reading, SensorError> m_result;
+};
+
+/// Requests a stop at its second read.
+class SecondReadStops final : public Sensor {
+public:
+  explicit SecondReadStops(std::stop_source stop)
+        : m_stop{std::move(stop)} {}
+
+  [[nodiscard]] std::expected<Reading, SensorError> read() override {
+    if (++m_reads == 2) {
+      m_stop.request_stop();
+    }
+    return Reading{.temperature = 20.0F, .humidity = 50.0F};
+  }
+
+private:
+  std::stop_source m_stop;
+  std::atomic<int> m_reads{0};
 };
 
 } // namespace
@@ -99,4 +120,18 @@ TEST_F(WardenAppTest, ReportsTheStateAgainWhenAsked) {
 
   app.reportStateAgain();
   app.run(m_stop.get_token());
+}
+
+TEST_F(WardenAppTest, ANewIntervalCountsFromTheLastRead) {
+  m_config.readInterval = maxReadInterval;
+  SecondReadStops sensor{m_stop};
+  WardenApp app{sensor, m_led, m_buzzer, m_reporter, m_config};
+  EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
+  EXPECT_CALL(m_led, turnOff());
+  EXPECT_CALL(m_buzzer, turnOff());
+
+  app.setReadInterval(minReadInterval);
+  const auto start = std::chrono::steady_clock::now();
+  app.run(m_stop.get_token());
+  EXPECT_GE(std::chrono::steady_clock::now() - start, minReadInterval);
 }

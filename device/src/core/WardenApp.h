@@ -10,7 +10,9 @@
 #include "interfaces/Sensor.h"
 
 #include <chrono>
+#include <condition_variable>
 #include <expected>
+#include <mutex>
 #include <stop_token>
 #include <variant>
 
@@ -47,6 +49,7 @@ public:
   /// Commands, from any thread: each is queued, and run() applies it.
   void setTemperatureThreshold(float threshold);
   void setHumidityThreshold(float threshold);
+  void setReadInterval(std::chrono::seconds interval);
 
 private:
   using SensorResult = std::expected<Reading, SensorError>;
@@ -59,16 +62,28 @@ private:
   struct NewHumidityThreshold {
     float threshold;
   };
+  /// A command set the read interval.
+  struct NewInterval {
+    std::chrono::seconds interval;
+  };
   /// What run() reacts to: a read of the sensor, or a call from another thread.
-  using Event = std::variant<SensorResult, ReportStateAgain, NewTemperatureThreshold, NewHumidityThreshold>;
+  using Event =
+      std::variant<SensorResult, ReportStateAgain, NewTemperatureThreshold, NewHumidityThreshold, NewInterval>;
 
+  /// Applies a new read interval, if it is within the config file's limits; logs and ignores it
+  /// otherwise.
+  void applyReadInterval(std::chrono::seconds interval);
   /// Reads the sensor periodically and pushes each result onto events.
   void sensorLoop(const std::stop_token &stopToken);
 
   Sensor &m_sensor;
   Led &m_led;
   Buzzer &m_buzzer;
+  /// Set by run()'s thread and read by the sensor thread, so guarded by m_intervalMutex. A change
+  /// wakes the sensor thread through m_intervalChanged.
   std::chrono::seconds m_readInterval;
+  std::mutex m_intervalMutex;
+  std::condition_variable_any m_intervalChanged;
   ReadingProcessor m_processor;
   BlockingQueue<Event> m_events;
 };

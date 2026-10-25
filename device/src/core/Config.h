@@ -34,6 +34,15 @@ struct MqttSettings {
   std::string deviceId;
 };
 
+/// The read interval's limits, for the config file and commands alike. The DHT22 needs 2 s between
+/// readings; above an hour, a value is more likely a typo.
+constexpr std::chrono::seconds minReadInterval{2};
+constexpr std::chrono::seconds maxReadInterval{3600};
+
+[[nodiscard]] constexpr bool isUsableReadInterval(std::chrono::seconds interval) noexcept {
+  return interval >= minReadInterval && interval <= maxReadInterval;
+}
+
 /// All runtime configuration: mirrors config/warden.toml, one struct per [section].
 struct Config {
   std::chrono::seconds readInterval{5};

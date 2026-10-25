@@ -8,9 +8,7 @@ namespace warden {
 
 namespace {
 
-// The DHT22 needs 2 s between readings; the upper limits catch typos.
-constexpr auto minReadInterval                 = std::chrono::seconds{2};
-constexpr auto maxReadInterval                 = std::chrono::seconds{3600};
+// The upper limits catch typos.
 constexpr std::size_t maxAveragingWindow       = 1000;
 constexpr std::size_t maxFaultAfterFailedReads = 100;
 constexpr float maxHumidity                    = 100.0F; // relative humidity is a percentage
@@ -66,7 +64,7 @@ std::expected<Config, std::string> loadConfig(std::string_view path) {
             },
     };
 
-    if (config.readInterval < minReadInterval || config.readInterval > maxReadInterval) {
+    if (!isUsableReadInterval(config.readInterval)) {
       return std::unexpected{
           std::format("read_interval_s must be between {} and {}", minReadInterval.count(), maxReadInterval.count())};
     }
