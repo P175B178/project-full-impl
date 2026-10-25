@@ -102,15 +102,23 @@ void runMonitoring(const warden::Config &config, const std::stop_token &stopToke
 
   warden::mqtt::MosquittoClient mqttClient{config.mqtt.deviceId};
   warden::mqtt::MqttPublisher publisher{mqttClient, config.mqtt.groupId, config.mqtt.deviceId};
+  warden::WardenApp app{sensor, led, buzzer, publisher, config};
+  // After every (re)connect: the state replaces the Last Will's offline, if the broker sent it.
+  mqttClient.setConnectedHandler([&app] { app.reportStateAgain(); });
+
   // If warden disappears without disconnecting, the broker tells everyone. It sends the message as
   // given here, so its timestamp is when warden started.
   mqttClient.setWill(publisher.offlineStatus(std::chrono::system_clock::now()));
+  // In the background: monitoring goes on while the broker cannot be reached.
   mqttClient.connect(config.mqtt);
 
   spdlog::info("Running — press Ctrl-C to stop");
 
-  warden::WardenApp app{sensor, led, buzzer, publisher, config};
   app.run(stopToken);
+
+  // The client calls into app on its network thread, and app is destroyed before mqttClient: so
+  // that thread stops here, while app is alive.
+  mqttClient.disconnect();
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────

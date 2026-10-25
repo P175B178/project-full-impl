@@ -12,6 +12,7 @@
 #include <chrono>
 #include <expected>
 #include <stop_token>
+#include <variant>
 
 namespace warden {
 
@@ -22,7 +23,9 @@ namespace warden {
 ///
 /// Threading:
 ///   - sensorLoop() runs on its own thread and pushes each result onto the queue.
-///   - run() takes them off on the caller's thread and hands them to the processor.
+///   - Other threads push onto the same queue, through reportStateAgain().
+///   - run() takes the events off on the caller's thread and hands them to the
+///     processor. Everything the processor does happens on that thread: no locks.
 ///   - run() stops and joins the sensor thread before returning.
 class WardenApp {
 public:
@@ -34,12 +37,21 @@ public:
   WardenApp(WardenApp &&)                 = delete;
   WardenApp &operator=(WardenApp &&)      = delete;
 
-  /// Run the monitoring loop until the stop token is signalled. Shows and reports the starting
-  /// state on entry, turns LED and buzzer off on exit.
+  /// Run the monitoring loop until the stop token is signalled. Shows the starting state on entry,
+  /// turns LED and buzzer off on exit.
   void run(const std::stop_token &stopToken);
 
+  /// Reports the current state again, as soon as run() gets to it. From any thread.
+  void reportStateAgain();
+
 private:
-  /// Reads the sensor periodically and pushes each result onto resultQueue.
+  using SensorResult = std::expected<Reading, SensorError>;
+  /// reportStateAgain() was called.
+  struct ReportStateAgain {};
+  /// What run() reacts to: a read of the sensor, or a call from another thread.
+  using Event = std::variant<SensorResult, ReportStateAgain>;
+
+  /// Reads the sensor periodically and pushes each result onto events.
   void sensorLoop(const std::stop_token &stopToken);
 
   Sensor &m_sensor;
@@ -47,7 +59,7 @@ private:
   Buzzer &m_buzzer;
   std::chrono::seconds m_readInterval;
   ReadingProcessor m_processor;
-  BlockingQueue<std::expected<Reading, SensorError>> m_resultQueue;
+  BlockingQueue<Event> m_events;
 };
 
 } // namespace warden

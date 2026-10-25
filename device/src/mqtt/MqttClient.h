@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 namespace warden::mqtt {
@@ -26,7 +27,12 @@ public:
   MqttClient(MqttClient &&)                 = delete;
   MqttClient &operator=(MqttClient &&)      = delete;
 
+  /// Sends the message, if connected; while not, it is dropped.
   virtual void publish(const MqttMessage &message) = 0;
+
+  /// Called after every connection, reconnects included, on the client's thread: it should only
+  /// pass the news on, as main() does to WardenApp::reportStateAgain(). Set it before connecting.
+  virtual void setConnectedHandler(std::function<void()> handler) = 0;
 };
 
 } // namespace warden::mqtt

@@ -28,8 +28,11 @@ public:
   ReadingProcessor(ReadingProcessor &&)                 = delete;
   ReadingProcessor &operator=(ReadingProcessor &&)      = delete;
 
-  /// Shows the state it starts in, Normal, on the LED, and reports it.
+  /// Shows the state it starts in, Normal, on the LED. reportState() reports it.
   void start();
+
+  /// Reports the current state, for whoever starts listening only now.
+  void reportState();
 
   /// React to one read of the sensor: a reading, or the error it reported.
   void process(const std::expected<Reading, SensorError> &result);

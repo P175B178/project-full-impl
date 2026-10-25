@@ -18,8 +18,9 @@ ReadingProcessor::ReadingProcessor(Led &led, Buzzer &buzzer, Reporter &reporter,
       , m_temperatureBuffer{config.averagingWindow}
       , m_humidityBuffer{config.averagingWindow} {}
 
-void ReadingProcessor::start() {
-  m_led.show(LedColor::Green, LedMode::Steady);
+void ReadingProcessor::start() { m_led.show(LedColor::Green, LedMode::Steady); }
+
+void ReadingProcessor::reportState() {
   m_reporter.reportState(m_stateMachine.state(), std::chrono::system_clock::now());
 }
 

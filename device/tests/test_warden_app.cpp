@@ -86,3 +86,17 @@ TEST_F(WardenAppTest, HandsFailedReadsToTheProcessor) {
 
   app.run(m_stop.get_token());
 }
+
+TEST_F(WardenAppTest, ReportsTheStateAgainWhenAsked) {
+  FakeSensor sensor{Reading{.temperature = 20.0F, .humidity = 50.0F}};
+  WardenApp app{sensor, m_led, m_buzzer, m_reporter, m_config};
+  EXPECT_CALL(m_led, show(LedColor::Green, LedMode::Steady));
+  EXPECT_CALL(m_led, turnOff());
+  EXPECT_CALL(m_buzzer, turnOff());
+  EXPECT_CALL(m_reporter, reportState(State::Normal, ::testing::_)).WillOnce(InvokeWithoutArgs([this] {
+    m_stop.request_stop();
+  }));
+
+  app.reportStateAgain();
+  app.run(m_stop.get_token());
+}

@@ -5,6 +5,7 @@
 #include <format>
 #include <mutex>
 #include <stdexcept>
+#include <utility>
 
 namespace warden::mqtt {
 
@@ -31,12 +32,17 @@ MosquittoClient::MosquittoClient(const std::string &clientId) {
   mosquitto_disconnect_callback_set(m_handle.get(), &MosquittoClient::onDisconnect);
 }
 
-MosquittoClient::~MosquittoClient() {
-  if (m_connected) {
+MosquittoClient::~MosquittoClient() { disconnect(); }
+
+void MosquittoClient::disconnect() {
+  if (m_started) {
     mosquitto_disconnect(m_handle.get());
     mosquitto_loop_stop(m_handle.get(), /*force=*/false); // the thread ends after disconnecting
+    m_started = false;
   }
 }
+
+void MosquittoClient::setConnectedHandler(std::function<void()> handler) { m_connectedHandler = std::move(handler); }
 
 void MosquittoClient::setWill(const MqttMessage &will) {
   if (const int result = mosquitto_will_set(m_handle.get(), will.topic.c_str(), static_cast<int>(will.payload.size()),
@@ -47,19 +53,29 @@ void MosquittoClient::setWill(const MqttMessage &will) {
 }
 
 void MosquittoClient::connect(const MqttSettings &broker) {
-  spdlog::info("Connecting to MQTT broker {}:{}", broker.host, broker.port);
-  if (const int result = mosquitto_connect(m_handle.get(), broker.host.c_str(), broker.port, keepAliveSeconds);
+  m_brokerName = std::format("{}:{}", broker.host, broker.port);
+  spdlog::info("Connecting to MQTT broker {}", m_brokerName);
+
+  // Only starts connecting; the network thread completes it, or keeps trying. Even when this fails
+  // at once, for an unknown host name say, the thread tries again later: the name may resolve on
+  // another network.
+  if (const int result = mosquitto_connect_async(m_handle.get(), broker.host.c_str(), broker.port, keepAliveSeconds);
       result != MOSQ_ERR_SUCCESS) {
-    throw std::runtime_error{
-        std::format("Cannot connect to MQTT broker {}:{}: {}", broker.host, broker.port, mosquitto_strerror(result))};
+    spdlog::warn("Cannot reach MQTT broker {} ({}); trying again in the background", m_brokerName,
+                 mosquitto_strerror(result));
+    m_reportedNotFound = true;
   }
   if (const int result = mosquitto_loop_start(m_handle.get()); result != MOSQ_ERR_SUCCESS) {
     throw std::runtime_error{std::format("Cannot start the MQTT network thread: {}", mosquitto_strerror(result))};
   }
-  m_connected = true;
+  m_started = true;
 }
 
 void MosquittoClient::publish(const MqttMessage &message) {
+  if (!m_online) {
+    spdlog::debug("Not connected to the MQTT broker: dropped a message to {}", message.topic);
+    return;
+  }
   if (const int result = mosquitto_publish(m_handle.get(), /*mid=*/nullptr, message.topic.c_str(),
                                            static_cast<int>(message.payload.size()), message.payload.data(),
                                            message.qos, message.retained);
@@ -68,21 +84,36 @@ void MosquittoClient::publish(const MqttMessage &message) {
   }
 }
 
-void MosquittoClient::onConnect(mosquitto * /*handle*/, void * /*self*/, int result) {
+void MosquittoClient::onConnect(mosquitto * /*handle*/, void *self, int result) {
+  auto &client = *static_cast<MosquittoClient *>(self);
   // The broker's answer to the connection request: 0 means accepted.
-  if (result == 0) {
-    spdlog::info("Connected to MQTT broker");
-  } else {
-    spdlog::error("MQTT broker refused the connection: {}", mosquitto_connack_string(result));
+  if (result != 0) {
+    spdlog::error("MQTT broker {} refused the connection: {}", client.m_brokerName, mosquitto_connack_string(result));
+    return;
+  }
+  spdlog::info("Connected to MQTT broker {}", client.m_brokerName);
+  client.m_online           = true;
+  client.m_wasOnline        = true;
+  client.m_reportedNotFound = false;
+  if (client.m_connectedHandler) {
+    client.m_connectedHandler();
   }
 }
 
-void MosquittoClient::onDisconnect(mosquitto * /*handle*/, void * /*self*/, int reason) {
-  // 0 means this program disconnected on purpose; anything else, the connection was lost.
+void MosquittoClient::onDisconnect(mosquitto * /*handle*/, void *self, int reason) {
+  auto &client    = *static_cast<MosquittoClient *>(self);
+  client.m_online = false;
+  // 0 means this program disconnected on purpose; anything else, the connection was lost or could
+  // not be made. Each is logged once, not on every retry.
   if (reason == 0) {
-    spdlog::info("Disconnected from MQTT broker");
-  } else {
-    spdlog::warn("Lost the connection to the MQTT broker; reconnecting");
+    spdlog::info("Disconnected from MQTT broker {}", client.m_brokerName);
+  } else if (client.m_wasOnline) {
+    spdlog::warn("Lost the connection to MQTT broker {}; reconnecting in the background", client.m_brokerName);
+    client.m_wasOnline        = false;
+    client.m_reportedNotFound = true; // the failed reconnects that follow need no message of their own
+  } else if (!client.m_reportedNotFound) {
+    spdlog::warn("Cannot reach MQTT broker {}; trying again in the background", client.m_brokerName);
+    client.m_reportedNotFound = true;
   }
 }
 

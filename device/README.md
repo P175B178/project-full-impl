@@ -65,8 +65,6 @@ cp config/warden.toml config/warden.local.toml
 Run the broker on your computer: open the repository in a VS Code window on the host and run the
 task **Broker: Start (dev)** (see [`broker/`](../broker/README.md)).
 
-Start it before `warden`, which stops if it cannot reach the broker.
-
 The broker is set in `warden.toml`, under `[mqtt]`. From the Pi, set `host` to this computer's LAN
 address (`ipconfig` on Windows, `ip addr` on Linux).
 
