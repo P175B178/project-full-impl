@@ -74,7 +74,7 @@ file.
 
 ### Build
 
-**VS Code task:** `Pi: Build` — debug
+**VS Code task:** `Pi: Build` — debug, with the tests
 
 ```bash
 cmake --preset pi-debug && cmake --build --preset pi-debug
@@ -101,6 +101,13 @@ tools/pi/run.sh   # Ctrl+C stops it; or: tools/pi/run.sh <config file on the Pi>
 ```bash
 tools/pi/deploy.sh                           # build/pi-debug/warden
 tools/pi/deploy.sh build/pi-release/warden   # or the release build
+```
+
+**VS Code task:** `Pi: Run tests` — builds, and runs the tests on the Pi
+
+```bash
+cmake --preset pi-debug && cmake --build --preset pi-debug
+tools/pi/test.sh
 ```
 
 ### Remote debugging

@@ -33,4 +33,7 @@ warden_configure_target(warden_tests)
 target_compile_options(warden_tests PRIVATE -Wno-missing-field-initializers)
 
 include(GoogleTest)
-gtest_discover_tests(warden_tests)
+# Find the tests when ctest runs rather than right after the build: listing
+# them means running the test binary, which this machine cannot do for the
+# cross-compiled Pi build (tools/pi/test.sh runs that one on the Pi).
+gtest_discover_tests(warden_tests DISCOVERY_MODE PRE_TEST)

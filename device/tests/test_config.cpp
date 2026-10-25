@@ -3,6 +3,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -180,8 +181,9 @@ TEST(LoadConfigTest, ThresholdOutsidePlausibleValuesIsRejected) {
 }
 
 TEST(LoadConfigTest, ShippedConfigFileShowsTheDefaults) {
-  // WARDEN_CONFIG_FILE is defined in tests/CMakeLists.txt as config/warden.toml.
-  const auto result = loadConfig(WARDEN_CONFIG_FILE);
+  // The Pi has no source tree, so tools/pi/test.sh passes the file's path there.
+  const char *copiedConfig = std::getenv("WARDEN_CONFIG_FILE");
+  const auto result        = loadConfig(copiedConfig != nullptr ? copiedConfig : WARDEN_CONFIG_FILE);
   ASSERT_TRUE(result.has_value()) << result.error();
 
   const Config defaults;

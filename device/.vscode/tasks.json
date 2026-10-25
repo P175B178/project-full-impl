@@ -62,6 +62,13 @@
       "dependsOrder": "sequence",
       "problemMatcher": []
     },
+    {
+      "label": "Pi: Run tests",
+      "type": "shell",
+      "command": "tools/pi/test.sh",
+      "dependsOn": "Pi: Build",
+      "problemMatcher": []
+    },
     // ── Pi: tools ──
     {
       "label": "Pi: Start gdbserver",
