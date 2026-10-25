@@ -70,7 +70,7 @@ file.
    (`tools/pi/init/01-setup-ssh.sh`).
 
 3. Set up what `warden` needs on the Pi (safe to run again): **VS Code task:**
-   `Pi init: 2. Bootstrap` (`tools/pi/init/02-bootstrap.sh`).
+   `Pi init: 2. Bootstrap` (`tools/pi/init/02-bootstrap.sh`). Reboot the Pi if it asks.
 
 ### Build
 
