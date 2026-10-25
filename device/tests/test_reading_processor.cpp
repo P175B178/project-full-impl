@@ -242,3 +242,44 @@ TEST_F(ReadingProcessorTest, ReportsTheFault) {
   EXPECT_CALL(m_reporter, reportState(State::Fault, ::testing::_));
   processor.process(readFailure);
 }
+
+TEST_F(ReadingProcessorTest, ANewThresholdTakesEffectAtOnce) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  processor.process(comfortable); // 20 C: Normal with the default 28 C
+  EXPECT_CALL(m_led, show(LedColor::Orange, LedMode::Steady));
+  EXPECT_CALL(m_reporter, reportState(State::Warning, ::testing::_));
+  processor.setTemperatureThreshold(15.0F); // without waiting for the next reading
+  EXPECT_EQ(processor.state(), State::Warning);
+}
+
+TEST_F(ReadingProcessorTest, AThresholdOutsideThePlausibleValuesIsIgnored) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  processor.process(comfortable);
+  processor.setTemperatureThreshold(50.5F); // above the plausible maximum: never exceeded
+  processor.setHumidityThreshold(-1.0F);    // below the plausible minimum
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Blinking));
+  EXPECT_CALL(m_buzzer, shortBeep(3));
+  processor.process(hotAndHumid); // still judged by the defaults, 28 C and 70 %
+  EXPECT_EQ(processor.state(), State::Alert);
+}
+
+TEST_F(ReadingProcessorTest, AThresholdAtThePlausibleMaximumIsAccepted) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithWindow(1)};
+  processor.process(comfortable);
+  processor.setHumidityThreshold(100.0F); // humidity can no longer exceed it
+  EXPECT_CALL(m_led, show(LedColor::Orange, LedMode::Steady));
+  EXPECT_CALL(m_reporter, reportState(State::Warning, ::testing::_));
+  processor.process(hotAndHumid); // only the temperature is exceeded
+  EXPECT_EQ(processor.state(), State::Warning);
+}
+
+TEST_F(ReadingProcessorTest, ANewThresholdDuringAFaultWaitsForAValidReading) {
+  ReadingProcessor processor{m_led, m_buzzer, m_reporter, configWithFaultAfter(1)};
+  EXPECT_CALL(m_led, show(LedColor::Red, LedMode::Steady));
+  processor.process(readFailure);
+  processor.setTemperatureThreshold(15.0F); // no averages to check: no reaction yet
+  EXPECT_EQ(processor.state(), State::Fault);
+  EXPECT_CALL(m_led, show(LedColor::Orange, LedMode::Steady));
+  processor.process(comfortable); // 20 C > 15 C
+  EXPECT_EQ(processor.state(), State::Warning);
+}

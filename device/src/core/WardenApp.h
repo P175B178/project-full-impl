@@ -23,7 +23,7 @@ namespace warden {
 ///
 /// Threading:
 ///   - sensorLoop() runs on its own thread and pushes each result onto the queue.
-///   - Other threads push onto the same queue, through reportStateAgain().
+///   - Other threads push onto the same queue, through reportStateAgain() and the commands.
 ///   - run() takes the events off on the caller's thread and hands them to the
 ///     processor. Everything the processor does happens on that thread: no locks.
 ///   - run() stops and joins the sensor thread before returning.
@@ -44,12 +44,23 @@ public:
   /// Reports the current state again, as soon as run() gets to it. From any thread.
   void reportStateAgain();
 
+  /// Commands, from any thread: each is queued, and run() applies it.
+  void setTemperatureThreshold(float threshold);
+  void setHumidityThreshold(float threshold);
+
 private:
   using SensorResult = std::expected<Reading, SensorError>;
   /// reportStateAgain() was called.
   struct ReportStateAgain {};
+  /// A command set a threshold.
+  struct NewTemperatureThreshold {
+    float threshold;
+  };
+  struct NewHumidityThreshold {
+    float threshold;
+  };
   /// What run() reacts to: a read of the sensor, or a call from another thread.
-  using Event = std::variant<SensorResult, ReportStateAgain>;
+  using Event = std::variant<SensorResult, ReportStateAgain, NewTemperatureThreshold, NewHumidityThreshold>;
 
   /// Reads the sensor periodically and pushes each result onto events.
   void sensorLoop(const std::stop_token &stopToken);

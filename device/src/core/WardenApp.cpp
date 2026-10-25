@@ -33,11 +33,14 @@ void WardenApp::run(const std::stop_token &appStopToken) {
 
   // pop() returns std::nullopt once the app requests stop, ending the loop.
   while (auto event = m_events.pop(appStopToken)) {
-    std::visit(Overloaded{
-                   [this](const SensorResult &result) { m_processor.process(result); },
-                   [this](ReportStateAgain /*request*/) { m_processor.reportState(); },
-               },
-               *event);
+    std::visit(
+        Overloaded{
+            [this](const SensorResult &result) { m_processor.process(result); },
+            [this](ReportStateAgain /*request*/) { m_processor.reportState(); },
+            [this](const NewTemperatureThreshold &command) { m_processor.setTemperatureThreshold(command.threshold); },
+            [this](const NewHumidityThreshold &command) { m_processor.setHumidityThreshold(command.threshold); },
+        },
+        *event);
   }
 
   m_led.turnOff();
@@ -45,6 +48,12 @@ void WardenApp::run(const std::stop_token &appStopToken) {
 }
 
 void WardenApp::reportStateAgain() { m_events.push(ReportStateAgain{}); }
+
+void WardenApp::setTemperatureThreshold(float threshold) {
+  m_events.push(NewTemperatureThreshold{.threshold = threshold});
+}
+
+void WardenApp::setHumidityThreshold(float threshold) { m_events.push(NewHumidityThreshold{.threshold = threshold}); }
 
 void WardenApp::sensorLoop(const std::stop_token &stopToken) {
   // C++20 has no sleep_for() that takes a stop_token, but condition_variable_any::wait_for() does:

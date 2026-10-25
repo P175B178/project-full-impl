@@ -78,6 +78,45 @@ void ReadingProcessor::countFailedRead() {
   reportTransition(*transition);
 }
 
+void ReadingProcessor::setTemperatureThreshold(float threshold) {
+  if (!m_plausibleValues.temperature.contains(threshold)) {
+    spdlog::warn("Ignored the new temperature threshold {:.1f}: it must lie in plausible_values, between {} and {}",
+                 threshold, m_plausibleValues.temperature.min, m_plausibleValues.temperature.max);
+    return;
+  }
+  spdlog::info("New temperature threshold: {:.1f} °C", threshold);
+
+  Thresholds thresholds  = m_stateMachine.thresholds();
+  thresholds.temperature = threshold;
+  applyThresholds(thresholds);
+}
+
+void ReadingProcessor::setHumidityThreshold(float threshold) {
+  if (!m_plausibleValues.humidity.contains(threshold)) {
+    spdlog::warn("Ignored the new humidity threshold {:.1f}: it must lie in plausible_values, between {} and {}",
+                 threshold, m_plausibleValues.humidity.min, m_plausibleValues.humidity.max);
+    return;
+  }
+  spdlog::info("New humidity threshold: {:.1f}%", threshold);
+
+  Thresholds thresholds = m_stateMachine.thresholds();
+  thresholds.humidity   = threshold;
+  applyThresholds(thresholds);
+}
+
+void ReadingProcessor::applyThresholds(const Thresholds &thresholds) {
+  m_stateMachine.setThresholds(thresholds);
+
+  // During a fault there are no averages: the next valid reading checks it.
+  const auto temperature = m_temperatureBuffer.average();
+  const auto humidity    = m_humidityBuffer.average();
+  if (temperature && humidity) {
+    if (const auto transition = m_stateMachine.update({.temperature = *temperature, .humidity = *humidity})) {
+      reportTransition(*transition);
+    }
+  }
+}
+
 void ReadingProcessor::reportTransition(const StateTransition &transition) {
   spdlog::warn("State change: {} -> {}", toString(transition.from), toString(transition.to));
   signalTransition(m_led, m_buzzer, transition);

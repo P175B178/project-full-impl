@@ -28,6 +28,10 @@ public:
   [[nodiscard]] std::optional<StateTransition> fault();
   [[nodiscard]] State state() const noexcept { return m_state; }
 
+  [[nodiscard]] Thresholds thresholds() const noexcept { return m_thresholds; }
+  /// Takes effect with the next update().
+  void setThresholds(Thresholds newThresholds) noexcept { m_thresholds = newThresholds; }
+
 private:
   [[nodiscard]] State evaluate(SmoothedReading smoothed) const noexcept;
   [[nodiscard]] std::optional<StateTransition> moveTo(State newState);

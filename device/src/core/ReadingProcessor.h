@@ -34,6 +34,12 @@ public:
   /// Reports the current state, for whoever starts listening only now.
   void reportState();
 
+  /// A new threshold, from a command. One outside the plausible range is logged and ignored, as in
+  /// the config file. The state is checked against the last averages at once, so the LED shows the
+  /// change without waiting for the next reading.
+  void setTemperatureThreshold(float threshold);
+  void setHumidityThreshold(float threshold);
+
   /// React to one read of the sensor: a reading, or the error it reported.
   void process(const std::expected<Reading, SensorError> &result);
 
@@ -42,6 +48,9 @@ public:
 private:
   /// Counts a failed or implausible read; enough in a row mean Fault.
   void countFailedRead();
+
+  /// Uses `thresholds` from now on, and checks the state against the last averages.
+  void applyThresholds(const Thresholds &thresholds);
 
   /// Logs a state change, shows it on the LED and buzzer, and reports it.
   void reportTransition(const StateTransition &transition);
