@@ -45,6 +45,16 @@ ctest --preset debug
 
 ## Utilities
 
+### Formatting
+
+clang-format formats C++ files on save in VS Code.
+
+**VS Code task:** `Format all sources`
+
+```bash
+cmake --preset debug && cmake --build --preset debug --target format
+```
+
 ### Clean build directories
 
 Useful when builds get into a broken state:

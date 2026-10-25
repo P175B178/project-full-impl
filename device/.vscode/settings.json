@@ -8,5 +8,12 @@
   "cmake.configurePreset": "debug",
 
   // C/C++ IntelliSense — driven by CMake Tools
-  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+
+  // clang-format on save, for C++ files only (.cpp and .h). Set globally, the
+  // C/C++ extension would be asked to format JSON, YAML and Markdown too.
+  "[cpp]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  }
 }
