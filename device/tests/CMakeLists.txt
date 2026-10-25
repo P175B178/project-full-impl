@@ -13,6 +13,7 @@ add_executable(warden_tests
     test_averaging.cpp
     test_blocking_queue.cpp
     test_config.cpp
+    test_mqtt_publisher.cpp
     test_payloads.cpp
     test_range.cpp
     test_reading_processor.cpp

@@ -101,6 +101,7 @@ pkg_check_modules(MOSQUITTO REQUIRED IMPORTED_TARGET libmosquitto)
 
 add_library(warden_mqtt
     src/mqtt/MosquittoClient.cpp
+    src/mqtt/MqttPublisher.cpp
     src/mqtt/Payloads.cpp
 )
 target_include_directories(warden_mqtt PUBLIC src/mqtt)

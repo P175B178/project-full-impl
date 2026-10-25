@@ -51,6 +51,15 @@ void MosquittoClient::connect(const MqttSettings &broker) {
   m_connected = true;
 }
 
+void MosquittoClient::publish(const MqttMessage &message) {
+  if (const int result = mosquitto_publish(m_handle.get(), /*mid=*/nullptr, message.topic.c_str(),
+                                           static_cast<int>(message.payload.size()), message.payload.data(),
+                                           message.qos, message.retained);
+      result != MOSQ_ERR_SUCCESS) {
+    spdlog::error("Cannot publish to {}: {}", message.topic, mosquitto_strerror(result));
+  }
+}
+
 void MosquittoClient::onConnect(mosquitto * /*handle*/, void * /*self*/, int result) {
   // The broker's answer to the connection request: 0 means accepted.
   if (result == 0) {
