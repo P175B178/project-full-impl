@@ -30,6 +30,7 @@
       "inherits": "base",
       "toolchainFile": "${sourceDir}/cmake/toolchains/raspberrypi-aarch64.cmake",
       "cacheVariables": {
+        "ENABLE_HARDWARE": "ON",
         "BUILD_TESTING": "OFF"
       }
     },

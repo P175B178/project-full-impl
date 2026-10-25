@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(ENABLE_HARDWARE "Build hardware drivers (Raspberry Pi only)" OFF)
 option(ENABLE_CLANG_TIDY "Run clang-tidy on every translation unit during build" OFF)
 option(BUILD_TESTING "Build the unit tests" ON)
 
@@ -66,6 +67,17 @@ target_include_directories(warden_core PUBLIC include src/core)
 target_link_libraries(warden_core PUBLIC spdlog::spdlog tomlplusplus::tomlplusplus)
 warden_configure_target(warden_core)
 
+# ── Hardware drivers ──
+if(ENABLE_HARDWARE)
+    add_library(warden_hardware
+        src/hardware/buzzer/GpioBuzzer.cpp
+        src/hardware/led/StatusLed.cpp
+        src/hardware/sensor/Dht22Sensor.cpp
+    )
+    target_link_libraries(warden_hardware PUBLIC warden_core)
+    warden_configure_target(warden_hardware)
+endif()
+
 # ── Main executable ──
 # main.cpp includes the header-only simulation classes in src/sim.
 add_executable(warden src/main.cpp)
@@ -73,6 +85,11 @@ add_executable(warden src/main.cpp)
 target_compile_definitions(warden PRIVATE WARDEN_VERSION="${PROJECT_VERSION}")
 target_link_libraries(warden PRIVATE warden_core CLI11::CLI11)
 warden_configure_target(warden)
+if(ENABLE_HARDWARE)
+    target_link_libraries(warden PRIVATE warden_hardware)
+    # Same name as the CMake option, so main.cpp can use #ifdef ENABLE_HARDWARE.
+    target_compile_definitions(warden PRIVATE ENABLE_HARDWARE)
+endif()
 
 # ── Format target ──
 find_program(CLANG_FORMAT_EXE clang-format)

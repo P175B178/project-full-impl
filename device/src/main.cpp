@@ -1,8 +1,5 @@
 #include "core/Config.h"
 #include "core/WardenApp.h"
-#include "sim/ConsoleBuzzer.h"
-#include "sim/ConsoleLed.h"
-#include "sim/SimulatedSensor.h"
 
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
@@ -16,6 +13,16 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+
+#ifdef ENABLE_HARDWARE
+#include "hardware/buzzer/GpioBuzzer.h"
+#include "hardware/led/StatusLed.h"
+#include "hardware/sensor/Dht22Sensor.h"
+#else
+#include "sim/ConsoleBuzzer.h"
+#include "sim/ConsoleLed.h"
+#include "sim/SimulatedSensor.h"
+#endif
 
 // Everything except main() is internal to this file.
 namespace {
@@ -78,9 +85,16 @@ std::expected<CommandLine, int> parseCommandLine(int argc, char **argv) {
 // ── Monitoring ───────────────────────────────────────────────────────────────
 /// Constructs the sensor, LED and buzzer and runs the monitoring loop until stopToken is signalled.
 void runMonitoring(const warden::Config &config, const std::stop_token &stopToken) {
+#ifdef ENABLE_HARDWARE
+  warden::hardware::Dht22Sensor sensor;
+  warden::hardware::StatusLed led;
+  warden::hardware::GpioBuzzer buzzer;
+#else
+  spdlog::warn("Hardware disabled — running with simulated sensor");
   warden::sim::SimulatedSensor sensor;
   warden::sim::ConsoleLed led;
   warden::sim::ConsoleBuzzer buzzer;
+#endif
 
   spdlog::info("Running — press Ctrl-C to stop");
 
