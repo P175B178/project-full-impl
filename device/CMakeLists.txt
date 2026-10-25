@@ -100,6 +100,7 @@ endif()
 pkg_check_modules(MOSQUITTO REQUIRED IMPORTED_TARGET libmosquitto)
 
 add_library(warden_mqtt
+    src/mqtt/Commands.cpp
     src/mqtt/MosquittoClient.cpp
     src/mqtt/MqttPublisher.cpp
     src/mqtt/Payloads.cpp
