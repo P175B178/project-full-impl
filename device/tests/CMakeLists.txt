@@ -15,6 +15,7 @@ add_executable(warden_tests
     test_reading_processor.cpp
     test_signal_transition.cpp
     test_state_machine.cpp
+    test_warden_app.cpp
 )
 
 target_link_libraries(warden_tests PRIVATE

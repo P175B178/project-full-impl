@@ -59,6 +59,7 @@ add_library(warden_core
     src/core/Config.cpp
     src/core/ReadingProcessor.cpp
     src/core/StateMachine.cpp
+    src/core/WardenApp.cpp
 )
 # Public, because other targets include these headers.
 target_include_directories(warden_core PUBLIC include src/core)

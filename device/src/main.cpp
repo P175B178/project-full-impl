@@ -1,5 +1,5 @@
 #include "core/Config.h"
-#include "core/ReadingProcessor.h"
+#include "core/WardenApp.h"
 #include "sim/ConsoleBuzzer.h"
 #include "sim/ConsoleLed.h"
 #include "sim/SimulatedSensor.h"
@@ -9,12 +9,10 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <csignal>
 #include <cstdlib>
 #include <exception>
 #include <expected>
-#include <mutex>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -77,6 +75,19 @@ std::expected<CommandLine, int> parseCommandLine(int argc, char **argv) {
   return commandLine;
 }
 
+// ── Monitoring ───────────────────────────────────────────────────────────────
+/// Constructs the sensor, LED and buzzer and runs the monitoring loop until stopToken is signalled.
+void runMonitoring(const warden::Config &config, const std::stop_token &stopToken) {
+  warden::sim::SimulatedSensor sensor;
+  warden::sim::ConsoleLed led;
+  warden::sim::ConsoleBuzzer buzzer;
+
+  spdlog::info("Running — press Ctrl-C to stop");
+
+  warden::WardenApp app{sensor, led, buzzer, config};
+  app.run(stopToken);
+}
+
 // ── Entry point ──────────────────────────────────────────────────────────────
 int runApp(int argc, char **argv) {
   const auto commandLine = parseCommandLine(argc, argv);
@@ -86,7 +97,6 @@ int runApp(int argc, char **argv) {
 
   std::stop_source appStop;
   const auto signalWatcher = watchForStopSignals(appStop);
-  const auto stopToken     = appStop.get_token();
 
   const auto configResult = warden::loadConfig(commandLine->configPath);
   if (!configResult) {
@@ -104,35 +114,8 @@ int runApp(int argc, char **argv) {
                config.plausibleValues.temperature.min, config.plausibleValues.temperature.max,
                config.plausibleValues.humidity.min, config.plausibleValues.humidity.max);
 
-  warden::sim::SimulatedSensor sensor;
-  warden::sim::ConsoleLed led;
-  warden::sim::ConsoleBuzzer buzzer;
-  warden::ReadingProcessor processor{led, buzzer, config};
-  spdlog::info("Running — press Ctrl-C to stop");
+  runMonitoring(config, appStop.get_token());
 
-  led.show(warden::LedColor::Green, warden::LedMode::Steady);
-
-  // C++20 has no sleep_for() that takes a stop_token, but condition_variable_any::wait_for() does:
-  // a stop request ends the wait. The predicate is never true, so nothing else does.
-  std::mutex sleepMutex;
-  std::condition_variable_any sleepCv;
-
-  while (!stopToken.stop_requested()) {
-    const auto result = sensor.read();
-
-    if (!result) {
-      spdlog::warn("Sensor read failed ({}) — skipping reading", toString(result.error()));
-    } else {
-      processor.process(*result);
-    }
-
-    // Sleeps after failed reads too, so broken hardware is not hammered.
-    std::unique_lock lock{sleepMutex};
-    sleepCv.wait_for(lock, stopToken, config.readInterval, [] { return false; });
-  }
-
-  led.turnOff();
-  buzzer.turnOff();
   spdlog::info("Shutting down");
   return EXIT_SUCCESS;
 }
