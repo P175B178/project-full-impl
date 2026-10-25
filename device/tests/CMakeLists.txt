@@ -10,12 +10,14 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(warden_tests
     test_averaging.cpp
+    test_signal_transition.cpp
     test_state_machine.cpp
 )
 
 target_link_libraries(warden_tests PRIVATE
     warden_core
     GTest::gtest_main
+    GTest::gmock
 )
 
 warden_configure_target(warden_tests)

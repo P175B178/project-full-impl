@@ -1,4 +1,5 @@
 #include "core/AveragingBuffer.h"
+#include "core/SignalTransition.h"
 #include "core/StateMachine.h"
 #include "sim/ConsoleBuzzer.h"
 #include "sim/ConsoleLed.h"
@@ -50,22 +51,7 @@ int runApp() {
                    result->temperature, smoothed.humidity, result->humidity, toString(stateMachine.state()));
       if (transition) {
         spdlog::warn("State change: {} -> {}", toString(transition->from), toString(transition->to));
-        switch (transition->to) {
-        case warden::State::Normal:
-          led.show(warden::LedColor::Green, warden::LedMode::Steady);
-          break;
-        case warden::State::Warning:
-          led.show(warden::LedColor::Orange, warden::LedMode::Steady);
-          break;
-        case warden::State::Alert:
-          led.show(warden::LedColor::Red, warden::LedMode::Blinking);
-          break;
-        }
-        if (transition->to == warden::State::Alert) {
-          buzzer.shortBeep(3U);
-        } else if (transition->from == warden::State::Alert) {
-          buzzer.longBeep(1U);
-        }
+        warden::signalTransition(led, buzzer, *transition);
       }
     }
 
