@@ -1,0 +1,4 @@
+# LeakSanitizer suppressions for running warden-console from a debug build (see
+# the Run task and the Debug launch configuration). Qt's platform plugin keeps
+# a few objects of its own until the process ends: not leaks of this program.
+leak:QGenericUnixServices

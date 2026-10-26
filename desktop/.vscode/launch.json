@@ -10,6 +10,8 @@
       "program": "${workspaceFolder}/build/debug/warden-console",
       "args": [],
       "cwd": "${workspaceFolder}",
+      // LeakSanitizer cannot run under a debugger; the Run task checks for leaks.
+      "environment": [{ "name": "ASAN_OPTIONS", "value": "detect_leaks=0" }],
       "preLaunchTask": "Build",
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb"

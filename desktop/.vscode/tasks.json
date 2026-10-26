@@ -17,7 +17,8 @@
     {
       "label": "Run",
       "type": "shell",
-      "command": "./build/debug/warden-console",
+      // lsan.supp: Qt's own objects left at exit are not reported as leaks.
+      "command": "LSAN_OPTIONS=suppressions=lsan.supp:print_suppressions=0 ./build/debug/warden-console",
       "dependsOn": "Build",
       "problemMatcher": []
     },

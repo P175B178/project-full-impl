@@ -22,8 +22,11 @@ cmake --preset debug && cmake --build --preset debug
 **VS Code task:** `Run` — with two simulated devices, no broker needed
 
 ```bash
-./build/debug/warden-console
+LSAN_OPTIONS=suppressions=lsan.supp:print_suppressions=0 ./build/debug/warden-console
 ```
+
+Debug builds run with AddressSanitizer and UndefinedBehaviorSanitizer; `lsan.supp` leaves out a
+few objects Qt itself keeps until the program ends.
 
 **Debug with breakpoints:**
 
