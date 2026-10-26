@@ -50,6 +50,12 @@ public:
   /// Forget every device, for a new source of device data.
   void clear();
 
+  /// Look up a device by its group id, or nullptr if it has not been discovered.
+  [[nodiscard]] const DeviceState *device(const QString &groupId) const;
+
+  /// The device backing a given row. The row must be in range.
+  [[nodiscard]] const DeviceState &deviceAt(int row) const;
+
 private:
   [[nodiscard]] int rowFor(const QString &groupId) const; // -1 if unknown
   int ensureRow(const QString &groupId);                  // returns the row, inserting if new

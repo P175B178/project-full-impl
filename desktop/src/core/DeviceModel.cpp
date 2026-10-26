@@ -102,6 +102,13 @@ void DeviceModel::clear() {
   endResetModel();
 }
 
+const DeviceState *DeviceModel::device(const QString &groupId) const {
+  const int row = rowFor(groupId);
+  return row >= 0 ? &m_devices.at(row) : nullptr;
+}
+
+const DeviceState &DeviceModel::deviceAt(int row) const { return m_devices.at(row); }
+
 // A linear search: a class has only a few devices.
 int DeviceModel::rowFor(const QString &groupId) const {
   for (int row = 0; row < m_devices.size(); ++row) {

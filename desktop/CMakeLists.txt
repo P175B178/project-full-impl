@@ -50,6 +50,8 @@ warden_configure_target(warden_core)
 qt_add_executable(warden-console
     src/main.cpp
     src/app/Colors.cpp
+    src/app/DeviceDetailPanel.cpp
+    src/app/DeviceDetailPanel.ui
     src/app/DeviceListPanel.cpp
     src/app/DeviceListPanel.ui
     src/app/MainWindow.cpp

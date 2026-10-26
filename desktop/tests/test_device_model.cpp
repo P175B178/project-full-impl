@@ -186,6 +186,22 @@ TEST(DeviceModelTest, HeaderLabelsEveryColumn) {
   EXPECT_EQ(fixture.model.headerData(DeviceModel::connectionColumn, Qt::Horizontal).toString(), "Connection");
 }
 
+TEST(DeviceModelTest, LooksUpADeviceByGroup) {
+  TestedModel fixture;
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+
+  const DeviceState *device = fixture.model.device("group-1");
+  ASSERT_NE(device, nullptr);
+  EXPECT_EQ(device->deviceId, "group-1-pi5");
+  EXPECT_EQ(&fixture.model.deviceAt(0), device);
+}
+
+TEST(DeviceModelTest, LookupOfUnknownGroupReturnsNull) {
+  TestedModel fixture;
+
+  EXPECT_EQ(fixture.model.device("nope"), nullptr);
+}
+
 TEST(DeviceModelTest, DataOutsideRangeIsInvalid) {
   TestedModel fixture;
   fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));

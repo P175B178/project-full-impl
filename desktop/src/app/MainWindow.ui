@@ -13,15 +13,87 @@
   <property name="windowTitle">
    <string>Warden Console</string>
   </property>
-  <widget class="warden::app::DeviceListPanel" name="deviceList" native="true"/>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="centralLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QTabWidget" name="mainTabs">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QStackedWidget" name="deviceStack">
+       <attribute name="title">
+        <string>Details</string>
+       </attribute>
+        <widget class="QLabel" name="deviceHint">
+         <property name="text">
+          <string>Select a device in the list to see its details here.</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="warden::app::DeviceDetailPanel" name="detailPanel" native="true"/>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menubar"/>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QDockWidget" name="deviceDock">
+   <property name="windowTitle">
+    <string>Devices</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="deviceDockContents">
+    <layout class="QVBoxLayout" name="deviceDockLayout">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="warden::app::DeviceListPanel" name="deviceList" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
    <class>warden::app::DeviceListPanel</class>
    <extends>QWidget</extends>
    <header>app/DeviceListPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>warden::app::DeviceDetailPanel</class>
+   <extends>QWidget</extends>
+   <header>app/DeviceDetailPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

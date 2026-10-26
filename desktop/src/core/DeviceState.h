@@ -3,6 +3,7 @@
 #include "messages/Observation.h"
 #include "messages/StatusMessage.h"
 
+#include <QDateTime>
 #include <QString>
 
 #include <optional>
@@ -24,6 +25,8 @@ struct DeviceState {
   // Meaningful once `hasStatus`: a device known only from its readings is not shown as Normal.
   messages::status_message::State state = messages::status_message::State::Normal;
   bool hasStatus                        = false;
+
+  QDateTime lastUpdate; // most recent time any field changed, in UTC
 
   /// The name to show: the display name, once a message has given one.
   [[nodiscard]] QString displayName() const { return deviceId.isEmpty() ? groupId : deviceId; }
