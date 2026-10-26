@@ -1,5 +1,6 @@
 #include "app/Colors.h"
 
+#include <QList>
 #include <QString>
 
 namespace warden::app {
@@ -29,6 +30,14 @@ QColor violationBackground() {
   QColor red(QStringLiteral("#f44336"));
   red.setAlpha(alpha);
   return red;
+}
+
+QColor seriesColor(qsizetype index) {
+  static const QList<QColor> palette = {
+      QColor(QStringLiteral("#1976d2")), QColor(QStringLiteral("#388e3c")), QColor(QStringLiteral("#f57c00")),
+      QColor(QStringLiteral("#7b1fa2")), QColor(QStringLiteral("#c2185b")), QColor(QStringLiteral("#00838f")),
+  };
+  return palette.at(index % palette.size());
 }
 
 } // namespace warden::app

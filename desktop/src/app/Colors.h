@@ -19,4 +19,8 @@ namespace warden::app {
 /// alike and keeps the text readable.
 [[nodiscard]] QColor violationBackground();
 
+/// A device's line on the charts, by the order the devices were found in; after six, the colors
+/// repeat.
+[[nodiscard]] QColor seriesColor(qsizetype index);
+
 } // namespace warden::app

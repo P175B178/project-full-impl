@@ -76,6 +76,16 @@
          </layout>
         </widget>
       </widget>
+      <widget class="QWidget" name="trendsPage">
+       <attribute name="title">
+        <string>Trends</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="trendsLayout">
+        <item>
+         <widget class="warden::app::ChartPanel" name="charts" native="true"/>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -138,6 +148,12 @@
   </widget>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>warden::app::ChartPanel</class>
+   <extends>QWidget</extends>
+   <header>app/ChartPanel.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>warden::app::LogPanel</class>
    <extends>QPlainTextEdit</extends>

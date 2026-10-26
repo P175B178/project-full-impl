@@ -15,7 +15,7 @@ endif()
 
 # Qt 6 from the dev container (installed under /opt/qt, found through
 # CMAKE_PREFIX_PATH).
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
 qt_standard_project_setup()
 
 # Settings for this project's own targets, so third-party code keeps its own.
@@ -53,6 +53,7 @@ warden_configure_target(warden_core)
 # ── Main executable ──
 qt_add_executable(warden-console
     src/main.cpp
+    src/app/ChartPanel.cpp
     src/app/Colors.cpp
     src/app/DeviceDetailPanel.cpp
     src/app/DeviceDetailPanel.ui
@@ -65,7 +66,7 @@ qt_add_executable(warden-console
     src/app/ViolationHighlightDelegate.cpp
     src/sim/SimulatedGateway.cpp
 )
-target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets)
+target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets Qt6::Charts)
 # Inject project version so the program can report it without hardcoding.
 target_compile_definitions(warden-console PRIVATE WARDEN_CONSOLE_VERSION="${PROJECT_VERSION}")
 warden_configure_target(warden-console)

@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include "app/ChartPanel.h"
 #include "app/DeviceDetailPanel.h"
 #include "app/DeviceListPanel.h"
 #include "app/LogPanel.h"
@@ -68,6 +69,7 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   // The gateway only emits; the window routes its signals into the models and the log.
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_monitor, &core::DeviceMonitor::addReading);
+  connect(m_gateway, &messages::DeviceGateway::readingReceived, m_ui->charts, &ChartPanel::addReading);
   connect(m_gateway, &messages::DeviceGateway::statusReceived, m_devices, &core::DeviceModel::applyStatus);
   connect(m_gateway, &messages::DeviceGateway::temperatureThresholdReceived, m_ui->detailPanel,
           &DeviceDetailPanel::setTemperatureThreshold);

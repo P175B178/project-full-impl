@@ -30,13 +30,13 @@ jobs:
       - uses: actions/checkout@v4
 
       # Debian's Qt is the same version as the dev container's (6.8.2), so the
-      # code is checked against the same Qt.
+      # code is checked against the same Qt, Qt Charts included.
       - name: Install system dependencies
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build git ca-certificates \
             clang clang-format clang-tidy \
-            qt6-base-dev
+            qt6-base-dev qt6-charts-dev
 
       - name: Check formatting
         run: |
