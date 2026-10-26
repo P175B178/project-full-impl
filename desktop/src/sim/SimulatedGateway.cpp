@@ -105,6 +105,7 @@ void SimulatedGateway::start() {
   m_state = State::Connected;
   emit stateChanged(m_state);
   for (Device &device : m_devices) {
+    publishSettings(device);
     device.timer->start();
     tick(device); // the first reading at once
   }
@@ -123,15 +124,17 @@ messages::DeviceGateway::State SimulatedGateway::state() const { return m_state;
 void SimulatedGateway::publishTemperatureThreshold(const QString &groupId, double celsius) {
   if (Device *target = device(groupId); target != nullptr) {
     target->temperatureThreshold = celsius;
-    logCommand(messages::topics::temperatureThreshold(groupId),
-               messages::command_serializer::temperatureThreshold(celsius));
+    publishConfig(messages::topics::temperatureThreshold(groupId),
+                  messages::command_serializer::temperatureThreshold(celsius), /*retain=*/true);
   }
 }
 
 void SimulatedGateway::publishHumidityThreshold(const QString &groupId, double percent) {
   if (Device *target = device(groupId); target != nullptr) {
     target->humidityThreshold = percent;
-    logCommand(messages::topics::humidityThreshold(groupId), messages::command_serializer::humidityThreshold(percent));
+    publishConfig(messages::topics::humidityThreshold(groupId),
+                  messages::command_serializer::humidityThreshold(percent),
+                  /*retain=*/true);
   }
 }
 
@@ -139,7 +142,8 @@ void SimulatedGateway::publishInterval(const QString &groupId, int seconds) {
   if (Device *target = device(groupId); target != nullptr) {
     target->intervalSeconds = seconds;
     target->timer->setInterval(seconds * msPerSecond);
-    logCommand(messages::topics::interval(groupId), messages::command_serializer::interval(seconds));
+    publishConfig(messages::topics::interval(groupId), messages::command_serializer::interval(seconds),
+                  /*retain=*/true);
   }
 }
 
@@ -171,8 +175,21 @@ void SimulatedGateway::tick(Device &device) {
   route(messages::topics::status(device.groupId), status(device.deviceId, byExceeded.at(exceeded), now));
 }
 
-void SimulatedGateway::logCommand(const QString &topic, const QByteArray &payload) {
+// What a broker hands a new subscriber: the retained settings.
+void SimulatedGateway::publishSettings(const Device &device) {
+  route(messages::topics::temperatureThreshold(device.groupId),
+        messages::command_serializer::temperatureThreshold(device.temperatureThreshold));
+  route(messages::topics::humidityThreshold(device.groupId),
+        messages::command_serializer::humidityThreshold(device.humidityThreshold));
+  route(messages::topics::interval(device.groupId), messages::command_serializer::interval(device.intervalSeconds));
+}
+
+void SimulatedGateway::publishConfig(const QString &topic, const QByteArray &payload, bool retain) {
   emit commandPublished(QStringLiteral("Sent %1 %2").arg(topic, QString::fromUtf8(payload)));
+  // A broker hands a retained message to every subscriber, this console among them.
+  if (retain) {
+    route(topic, payload);
+  }
 }
 
 } // namespace warden::sim

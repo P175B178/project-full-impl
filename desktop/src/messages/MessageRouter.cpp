@@ -1,5 +1,6 @@
 #include "messages/MessageRouter.h"
 
+#include "messages/ConfigMessage.h"
 #include "messages/Topics.h"
 
 #include <QLatin1Char>
@@ -41,6 +42,20 @@ std::expected<Message, QString> routeStatus(const Topic &topic, const QByteArray
   return Status{.groupId = topic.group, .status = status.value()};
 }
 
+/// One setting: `parse` reads its payload, and `Setting` is the message it becomes.
+template <typename Setting, typename Parse>
+std::expected<Message, QString> routeSetting(const Topic &topic, const QByteArray &payload, const Parse &parse) {
+  // An empty retained message removes a setting from the broker: it is not a malformed one.
+  if (payload.isEmpty()) {
+    return Setting{topic.group, std::nullopt};
+  }
+  const auto value = parse(payload);
+  if (!value.has_value()) {
+    return std::unexpected(QStringLiteral("Dropped setting on %1: %2").arg(topic.name, value.error()));
+  }
+  return Setting{topic.group, value.value()};
+}
+
 } // namespace
 
 std::expected<Message, QString> route(const QString &topicName, const QByteArray &payload) {
@@ -55,6 +70,15 @@ std::expected<Message, QString> route(const QString &topicName, const QByteArray
   }
   if (topic.name == topics::status(topic.group)) {
     return routeStatus(topic, payload);
+  }
+  if (topic.name == topics::temperatureThreshold(topic.group)) {
+    return routeSetting<TemperatureThreshold>(topic, payload, config_message::parseTemperatureThreshold);
+  }
+  if (topic.name == topics::humidityThreshold(topic.group)) {
+    return routeSetting<HumidityThreshold>(topic, payload, config_message::parseHumidityThreshold);
+  }
+  if (topic.name == topics::interval(topic.group)) {
+    return routeSetting<Interval>(topic, payload, config_message::parseInterval);
   }
   return unexpectedTopic(topicName);
 }

@@ -12,9 +12,10 @@ class QTimer;
 namespace warden::sim {
 
 /// A `DeviceGateway` that needs no broker: two made-up devices, each publishing on a timer of its
-/// own. One device's temperature jumps now and then, the other stays steady. Each reports its state
-/// as a device does, and takes the thresholds and the interval it is sent. Their messages are JSON
-/// on the device's topics, so the console parses them as it will a broker's.
+/// own. One device's temperature jumps now and then, the other stays steady. Their messages are
+/// JSON on the device's topics, so the console parses them as it will a broker's. Like a device,
+/// each takes the thresholds and the interval it is sent; like a broker, the simulator hands the
+/// retained settings back.
 class SimulatedGateway : public messages::DeviceGateway {
   Q_OBJECT
 
@@ -44,7 +45,8 @@ private:
 
   Device *device(const QString &groupId); // nullptr for a group it does not simulate
   void tick(Device &device);
-  void logCommand(const QString &topic, const QByteArray &payload);
+  void publishSettings(const Device &device);
+  void publishConfig(const QString &topic, const QByteArray &payload, bool retain);
 
   std::array<Device, 2> m_devices; // fixed, so each timer can keep a reference to its device
   State m_state = State::Disconnected;

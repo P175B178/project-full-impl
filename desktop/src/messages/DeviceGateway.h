@@ -7,6 +7,8 @@
 #include <QObject>
 #include <QString>
 
+#include <optional>
+
 namespace warden::messages {
 
 /// Where the console's device data comes from, and where its commands go: the devices' messages on
@@ -41,6 +43,12 @@ signals:
 
   /// A parsed status message for a device.
   void statusReceived(const QString &groupId, const status_message::Status &status);
+
+  /// The setting a device was last sent, by this console or another; or nullopt, when it was
+  /// cleared: an empty retained message removes the setting from the broker.
+  void temperatureThresholdReceived(const QString &groupId, std::optional<double> celsius);
+  void humidityThresholdReceived(const QString &groupId, std::optional<double> percent);
+  void intervalReceived(const QString &groupId, std::optional<int> seconds);
 
   /// The source's lifecycle, for the status bar.
   void stateChanged(DeviceGateway::State state);

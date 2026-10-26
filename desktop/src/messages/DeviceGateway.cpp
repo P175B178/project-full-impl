@@ -34,6 +34,15 @@ void DeviceGateway::route(const QString &topic, const QByteArray &payload) {
       Overloaded{
           [this](const message_router::Reading &received) { emit readingReceived(received.groupId, received.reading); },
           [this](const message_router::Status &received) { emit statusReceived(received.groupId, received.status); },
+          [this](const message_router::TemperatureThreshold &received) {
+            emit temperatureThresholdReceived(received.groupId, received.celsius);
+          },
+          [this](const message_router::HumidityThreshold &received) {
+            emit humidityThresholdReceived(received.groupId, received.percent);
+          },
+          [this](const message_router::Interval &received) {
+            emit intervalReceived(received.groupId, received.seconds);
+          },
       },
       message.value());
 }
