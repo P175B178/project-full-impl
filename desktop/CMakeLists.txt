@@ -79,6 +79,37 @@ target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets Qt6::Chart
 target_compile_definitions(warden-console PRIVATE WARDEN_CONSOLE_VERSION="${PROJECT_VERSION}")
 warden_configure_target(warden-console)
 
+# ── Install rules ──
+# The package installs into /usr. Debian has Qt, Qt Charts included, but no
+# QtMqtt, so the package carries its own copy of libQt6Mqtt, in a folder of
+# its own that the executable finds through its RPATH.
+include(GNUInstallDirs)
+set(WARDEN_PRIVATE_LIBDIR "${CMAKE_INSTALL_LIBDIR}/warden-console")
+set_target_properties(warden-console PROPERTIES INSTALL_RPATH "$ORIGIN/../${WARDEN_PRIVATE_LIBDIR}")
+install(TARGETS warden-console RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(IMPORTED_RUNTIME_ARTIFACTS Qt6::Mqtt LIBRARY DESTINATION ${WARDEN_PRIVATE_LIBDIR})
+install(FILES packaging/warden-console.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+
+# ── Packaging (CPack) ──
+set(CPACK_PACKAGE_NAME "warden-console")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Desktop console for Warden devices")
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "warden")
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+# Debian's own Qt, the same version as the dev container's. Named by hand:
+# dpkg-shlibdeps cannot work them out from a Qt installed under /opt/qt, which
+# no Debian package owns.
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
+    "libqt6widgets6 (>= ${Qt6_VERSION}), libqt6charts6 (>= ${Qt6_VERSION}), libqt6network6 (>= ${Qt6_VERSION})")
+# The bundled QtMqtt uses Qt's private API, which may change with any Qt version: it needs
+# exactly the Qt it was built against.
+string(APPEND CPACK_DEBIAN_PACKAGE_DEPENDS ", qt6-base-private-abi (= ${Qt6_VERSION})")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
+    "Monitors Warden devices through an MQTT broker.\n Shows their readings, states and trends, and changes their configuration.")
+include(CPack)
+
 # ── Format target ──
 find_program(CLANG_FORMAT_EXE clang-format)
 if(CLANG_FORMAT_EXE)

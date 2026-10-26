@@ -52,6 +52,14 @@
       "output": { "outputOnFailure": true }
     }
   ],
+  "packagePresets": [
+    {
+      "name": "release",
+      "displayName": "Release (.deb)",
+      "configurePreset": "release",
+      "packageDirectory": "${sourceDir}/package"
+    }
+  ],
   "workflowPresets": [
     {
       "name": "tidy",
@@ -68,6 +76,15 @@
         { "type": "configure", "name": "release" },
         { "type": "build",     "name": "release" },
         { "type": "test",      "name": "release" }
+      ]
+    },
+    {
+      "name": "package",
+      "displayName": "Package — release build as .deb",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build",     "name": "release" },
+        { "type": "package",   "name": "release" }
       ]
     }
   ]

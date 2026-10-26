@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Warden Console
+Comment=Monitor Warden sensor devices over MQTT
+Exec=warden-console
+Terminal=false
+Categories=Network;Monitor;

@@ -86,6 +86,27 @@ not stored: the console asks for it on every start.
 
 ---
 
+## Packaging a release
+
+**VS Code task:** `Workflow: Package` — an optimized build, packaged as a `.deb` for Debian 13 in
+`package/`
+
+```bash
+rm -rf package && cmake --workflow --preset package
+```
+
+Install it with apt, which also installs the Qt libraries it needs:
+
+```bash
+sudo apt install ./warden-console_1.0.0_amd64.deb
+```
+
+The package carries its own QtMqtt, which works only with the Qt version it was built against, so
+the package requires exactly that version. An installed console connects to `localhost:1883` at
+first.
+
+---
+
 ## Utilities
 
 ### Formatting
