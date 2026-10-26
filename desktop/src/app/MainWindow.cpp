@@ -1,7 +1,9 @@
 #include "app/MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include "app/BrokerSettingsStore.h"
 #include "app/ChartPanel.h"
+#include "app/ConnectionDialog.h"
 #include "app/DeviceDetailPanel.h"
 #include "app/DeviceListPanel.h"
 #include "app/GroupFilterProxyModel.h"
@@ -53,6 +55,7 @@ QString stateText(messages::DeviceGateway::State state) {
 MainWindow::MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *broker, QWidget *parent)
       : QMainWindow(parent)
       , m_ui(std::make_unique<Ui::MainWindow>())
+      , m_settings(broker_settings_store::load())
       , m_devices(new core::DeviceModel(this))
       , m_monitor(new core::DeviceMonitor(this))
       , m_alerts(new core::AlertLogModel(this))
@@ -72,6 +75,7 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *b
   // data updates.
   connect(m_ui->deviceList, &DeviceListPanel::deviceSelected, this, &MainWindow::showDevice);
   connect(m_devices, &QAbstractItemModel::dataChanged, this, [this] { showDevice(m_currentGroup); });
+  connect(m_devices, &QAbstractItemModel::modelReset, this, [this] { showDevice(QString()); });
 
   // The alert log is shown through a filter, scoped to the ticked devices.
   m_alertFilter->setSourceModel(m_alerts);
@@ -83,8 +87,11 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *b
   connect(m_devices, &core::DeviceModel::checkedDevicesChanged, this, &MainWindow::updateScope);
   updateScope();
 
-  // Only a broker has errors to report; the simulator has none.
+  // Only a broker has settings to choose and errors to report; the simulator has neither.
   if (m_broker != nullptr) {
+    auto *brokerMenu = menuBar()->addMenu(QStringLiteral("&Broker"));
+    connect(brokerMenu->addAction(QStringLiteral("&Connect…")), &QAction::triggered, this,
+            &MainWindow::openConnectionDialog);
     connect(m_broker, &mqtt::MqttConnection::errorOccurred, this, [this](const QString &message) {
       statusBar()->showMessage(QStringLiteral("Error: %1").arg(message));
       m_ui->logPanel->appendMessage(QStringLiteral("Error: %1").arg(message));
@@ -143,6 +150,17 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *b
 
 MainWindow::~MainWindow() = default;
 
+void MainWindow::openConnectionDialog() {
+  ConnectionDialog dialog(m_settings, this);
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+  m_settings = dialog.settings();
+  broker_settings_store::save(m_settings);
+  clearDevices();
+  connectToBroker();
+}
+
 void MainWindow::exportHistoryCsv() {
   if (m_currentGroup.isEmpty()) {
     statusBar()->showMessage(QStringLiteral("Select a device to export its history."));
@@ -194,6 +212,15 @@ void MainWindow::showDevice(const QString &groupId) {
   if (m_ui->historyView->model() != history) {
     m_ui->historyView->setModel(history);
   }
+}
+
+void MainWindow::clearDevices() {
+  // The window shows the devices of one broker at a time.
+  m_devices->clear();
+  m_monitor->clear();
+  m_ui->detailPanel->forgetDevices();
+  m_ui->charts->clear();
+  m_alerts->clear();
 }
 
 void MainWindow::updateScope() {

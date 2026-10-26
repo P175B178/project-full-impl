@@ -41,6 +41,9 @@ public:
   /// For when no device is selected.
   void clearDevice();
 
+  /// Forgets every device's settings, for a new source of device data.
+  void forgetDevices();
+
   /// The setting a device was last sent; nullopt when it was cleared.
   void setTemperatureThreshold(const QString &groupId, std::optional<double> celsius);
   void setHumidityThreshold(const QString &groupId, std::optional<double> percent);

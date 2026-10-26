@@ -88,6 +88,11 @@ DeviceDetailPanel::~DeviceDetailPanel() = default;
 
 void DeviceDetailPanel::setGateway(messages::DeviceGateway *gateway) { m_gateway = gateway; }
 
+void DeviceDetailPanel::forgetDevices() {
+  m_configs.clear();
+  clearDevice();
+}
+
 void DeviceDetailPanel::clearDevice() {
   m_currentGroup.clear();
   setEnabled(false);

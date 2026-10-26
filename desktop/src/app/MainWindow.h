@@ -44,11 +44,13 @@ public:
   ~MainWindow() override;
 
 private:
+  void openConnectionDialog();
   void exportHistoryCsv();
   void exportChartsPng();
   void connectToBroker();
   void showDevice(const QString &groupId);
-  void updateScope(); // apply the ticked devices to the charts and the alert log
+  void clearDevices(); // forget the devices of the previous broker
+  void updateScope();  // apply the ticked devices to the charts and the alert log
 
   std::unique_ptr<Ui::MainWindow> m_ui;
   mqtt::BrokerSettings m_settings;

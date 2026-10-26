@@ -165,6 +165,21 @@ void ChartPanel::setVisibleDevices(const QStringList &groupIds) {
   }
 }
 
+void ChartPanel::clear() {
+  for (QLineSeries *series : std::as_const(m_temperatureSeries)) {
+    m_temperatureChart->removeSeries(series);
+    delete series; // removeSeries hands ownership back
+  }
+  for (QLineSeries *series : std::as_const(m_humiditySeries)) {
+    m_humidityChart->removeSeries(series);
+    delete series; // removeSeries hands ownership back
+  }
+  m_temperatureSeries.clear();
+  m_humiditySeries.clear();
+  m_colors.clear();
+  m_latestMs = QDateTime::currentMSecsSinceEpoch();
+}
+
 void ChartPanel::trim(QXYSeries *series) const {
   // Drop points older than the window, so the series stays bounded.
   const auto cutoff = static_cast<double>(m_latestMs - (static_cast<qint64>(m_windowSeconds) * msPerSecond));

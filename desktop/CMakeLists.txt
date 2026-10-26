@@ -55,8 +55,11 @@ warden_configure_target(warden_core)
 # ── Main executable ──
 qt_add_executable(warden-console
     src/main.cpp
+    src/app/BrokerSettingsStore.cpp
     src/app/ChartPanel.cpp
     src/app/Colors.cpp
+    src/app/ConnectionDialog.cpp
+    src/app/ConnectionDialog.ui
     src/app/DeviceDetailPanel.cpp
     src/app/DeviceDetailPanel.ui
     src/app/DeviceListPanel.cpp

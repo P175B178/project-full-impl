@@ -49,6 +49,8 @@ MqttConnection::MqttConnection(QObject *parent)
 void MqttConnection::setBroker(const BrokerSettings &settings) { m_broker = settings; }
 
 void MqttConnection::start() {
+  // A client takes a new host only while disconnected, so a new broker gets a new client.
+  createClient();
   m_client->setHostname(m_broker.host);
   m_client->setPort(m_broker.port);
   m_client->connectToHost();
@@ -61,6 +63,7 @@ void MqttConnection::stop() {
 }
 
 void MqttConnection::createClient() {
+  // Deleting the old client also drops its connections.
   m_client = std::make_unique<QMqttClient>();
   // Subscriptions do not survive a new connection, so they are made on every connect.
   connect(m_client.get(), &QMqttClient::connected, this, &MqttConnection::subscribeAll);

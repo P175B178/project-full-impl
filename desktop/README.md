@@ -63,7 +63,8 @@ double-clicking it in VS Code (Qt extension).
 Run the broker on your computer: open the repository in a VS Code window on the host and run the
 task **Broker: Start (dev)** (see [`broker/`](../broker/README.md)). The console connects to
 `host.docker.internal:1883` in the dev container (set in `WARDEN_BROKER_HOST`), and to
-`localhost:1883` elsewhere.
+`localhost:1883` elsewhere, at first: **Broker > Connect…** picks another broker, which the console
+remembers for the next start.
 
 To try it without a device, publish `protocol/examples/observation-temperature.json` on
 `sensors/group-1/temperature` from MQTT Explorer.

@@ -32,6 +32,9 @@ public:
   /// start hidden too.
   void setVisibleDevices(const QStringList &groupIds);
 
+  /// Remove every device's series, for a new source of device data.
+  void clear();
+
 private:
   QLineSeries *seriesFor(const QString &groupId, messages::observation::Metric metric, const QString &name);
   QColor colorFor(const QString &groupId);

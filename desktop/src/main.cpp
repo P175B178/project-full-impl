@@ -12,6 +12,8 @@
 
 int main(int argc, char *argv[]) {
   QApplication app{argc, argv};
+  // QSettings stores the settings under these names.
+  QApplication::setOrganizationName("Warden");
   QApplication::setApplicationName("Warden Console");
   QApplication::setApplicationVersion(WARDEN_CONSOLE_VERSION);
 
