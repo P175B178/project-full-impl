@@ -51,6 +51,7 @@ qt_add_executable(warden-console
     src/main.cpp
     src/app/Colors.cpp
     src/app/MainWindow.cpp
+    src/app/MainWindow.ui
     src/app/StateColorDelegate.cpp
     src/sim/SimulatedGateway.cpp
 )

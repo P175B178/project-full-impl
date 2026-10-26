@@ -44,6 +44,13 @@ ctest --preset debug
 
 ---
 
+## Window layout
+
+The window's layout is in Qt Designer forms, `src/app/*.ui`. Open one in Qt Widgets Designer by
+double-clicking it in VS Code (Qt extension).
+
+---
+
 ## Utilities
 
 ### Formatting

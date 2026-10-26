@@ -1,21 +1,17 @@
 #include "app/MainWindow.h"
+#include "ui_MainWindow.h"
 
 #include "app/StateColorDelegate.h"
 #include "core/DeviceModel.h"
 #include "messages/DeviceGateway.h"
 
-#include <QApplication>
 #include <QHeaderView>
 #include <QLabel>
 #include <QStatusBar>
-#include <QTableView>
 
 namespace warden::app {
 
 namespace {
-
-constexpr int defaultWidth  = 960;
-constexpr int defaultHeight = 640;
 
 QString stateText(messages::DeviceGateway::State state) {
   switch (state) {
@@ -33,18 +29,15 @@ QString stateText(messages::DeviceGateway::State state) {
 
 MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
       : QMainWindow(parent)
+      , m_ui(std::make_unique<Ui::MainWindow>())
       , m_devices(new core::DeviceModel(this))
       , m_gateway(&gateway)
       , m_connectionState(new QLabel(this)) {
-  setWindowTitle(QApplication::applicationName());
-  resize(defaultWidth, defaultHeight);
-
-  auto *deviceView = new QTableView(this);
-  deviceView->setModel(m_devices);
-  deviceView->setItemDelegateForColumn(core::DeviceModel::stateColumn, new StateColorDelegate(this));
-  deviceView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
-  deviceView->verticalHeader()->setVisible(false);
-  setCentralWidget(deviceView);
+  m_ui->setupUi(this);
+  m_ui->deviceView->setModel(m_devices);
+  m_ui->deviceView->setItemDelegateForColumn(core::DeviceModel::stateColumn, new StateColorDelegate(this));
+  m_ui->deviceView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
+  m_ui->deviceView->verticalHeader()->setVisible(false);
 
   // The gateway only emits; the window routes its signals into the model.
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);
@@ -57,5 +50,7 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
 
   m_gateway->start();
 }
+
+MainWindow::~MainWindow() = default;
 
 } // namespace warden::app
