@@ -24,6 +24,9 @@ public:
   static constexpr int humidityColumn    = 2;
   static constexpr int columnTotal       = 3; // sentinel: number of columns
 
+  // Qt::DisplayRole gives a cell as shown, "23.4 °C"; Qt::EditRole gives its raw value, 23.4,
+  // for an export.
+
   /// Custom data role (bool): true when this cell's value exceeds its metric's threshold.
   static constexpr int violationRole = Qt::UserRole + 1;
 

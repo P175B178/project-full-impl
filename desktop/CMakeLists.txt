@@ -34,6 +34,7 @@ endfunction()
 # tests can run them headless.
 add_library(warden_core STATIC
     src/core/AlertLogModel.cpp
+    src/core/CsvExport.cpp
     src/core/DeviceModel.cpp
     src/core/DeviceMonitor.cpp
     src/core/DeviceState.cpp

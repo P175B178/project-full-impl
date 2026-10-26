@@ -8,6 +8,7 @@
 #include "app/LogPanel.h"
 #include "app/ViolationHighlightDelegate.h"
 #include "core/AlertLogModel.h"
+#include "core/CsvExport.h"
 #include "core/DeviceModel.h"
 #include "core/DeviceMonitor.h"
 #include "core/DeviceState.h"
@@ -16,11 +17,14 @@
 #include "messages/StatusMessage.h"
 
 #include <QAbstractItemModel>
+#include <QAction>
 #include <QDateTime>
 #include <QDockWidget>
+#include <QFileDialog>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMenuBar>
+#include <QPixmap>
 #include <QStackedWidget>
 #include <QStatusBar>
 
@@ -82,6 +86,12 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   viewMenu->addAction(m_ui->deviceDock->toggleViewAction());
   viewMenu->addAction(m_ui->logDock->toggleViewAction());
 
+  auto *exportMenu = menuBar()->addMenu(QStringLiteral("&Export"));
+  connect(exportMenu->addAction(QStringLiteral("History (&CSV)…")), &QAction::triggered, this,
+          &MainWindow::exportHistoryCsv);
+  connect(exportMenu->addAction(QStringLiteral("Charts (&PNG)…")), &QAction::triggered, this,
+          &MainWindow::exportChartsPng);
+
   // The gateway only emits; the window routes its signals into the models and the log.
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_monitor, &core::DeviceMonitor::addReading);
@@ -113,6 +123,32 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
 }
 
 MainWindow::~MainWindow() = default;
+
+void MainWindow::exportHistoryCsv() {
+  if (m_currentGroup.isEmpty()) {
+    statusBar()->showMessage(QStringLiteral("Select a device to export its history."));
+    return;
+  }
+  const QString path = QFileDialog::getSaveFileName(this, QStringLiteral("Export History"),
+                                                    QStringLiteral("history.csv"), QStringLiteral("CSV files (*.csv)"));
+  if (path.isEmpty()) {
+    return;
+  }
+  const QString error = core::csv_export::writeModel(m_monitor->historyFor(m_currentGroup), path);
+  statusBar()->showMessage(error.isEmpty() ? QStringLiteral("History exported to %1").arg(path)
+                                           : QStringLiteral("Export failed: %1").arg(error));
+}
+
+void MainWindow::exportChartsPng() {
+  const QString path = QFileDialog::getSaveFileName(this, QStringLiteral("Export Charts"), QStringLiteral("charts.png"),
+                                                    QStringLiteral("PNG images (*.png)"));
+  if (path.isEmpty()) {
+    return;
+  }
+  const QPixmap pixmap = m_ui->charts->grab();
+  statusBar()->showMessage(pixmap.save(path) ? QStringLiteral("Charts exported to %1").arg(path)
+                                             : QStringLiteral("Could not save image to %1").arg(path));
+}
 
 void MainWindow::showDevice(const QString &groupId) {
   m_currentGroup                  = groupId;

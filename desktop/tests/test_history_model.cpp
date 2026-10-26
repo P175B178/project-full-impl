@@ -160,3 +160,14 @@ TEST(HistoryModelTest, HeaderLabelsEveryColumn) {
   EXPECT_EQ(fixture.model.headerData(HistoryModel::temperatureColumn, Qt::Horizontal).toString(), "Temperature");
   EXPECT_EQ(fixture.model.headerData(HistoryModel::humidityColumn, Qt::Horizontal).toString(), "Humidity");
 }
+
+TEST(HistoryModelTest, EditRoleGivesTheRawValues) {
+  TestedModel fixture;
+
+  fixture.model.addReading(temperature(1, 23.5));
+
+  const auto raw = [&fixture](int column) { return fixture.model.data(fixture.model.index(0, column), Qt::EditRole); };
+  EXPECT_EQ(raw(HistoryModel::timeColumn).toString(), "2026-01-02T03:04:01Z");
+  EXPECT_EQ(raw(HistoryModel::temperatureColumn), QVariant(23.5));
+  EXPECT_FALSE(raw(HistoryModel::humidityColumn).isValid()); // no humidity reading yet
+}

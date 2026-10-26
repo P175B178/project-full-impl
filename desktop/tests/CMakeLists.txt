@@ -17,6 +17,7 @@ add_executable(warden_console_tests
     test_alert_log_model.cpp
     test_command_serializer.cpp
     test_config_message.cpp
+    test_csv_export.cpp
     test_device_model.cpp
     test_device_monitor.cpp
     test_history_model.cpp
@@ -29,6 +30,7 @@ add_executable(warden_console_tests
 target_link_libraries(warden_console_tests PRIVATE
     warden_core
     Qt6::Test
+    Qt6::Gui # QStandardItemModel, as a plain model to export
     GTest::gtest_main
 )
 

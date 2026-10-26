@@ -29,6 +29,19 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const {
       return false;
     }
   }
+  // The raw value, for an export: a number without its unit, nothing where there is none.
+  if (role == Qt::EditRole) {
+    switch (index.column()) {
+    case timeColumn:
+      return entry.time.toString(Qt::ISODate);
+    case temperatureColumn:
+      return entry.temperature.has_value() ? QVariant(entry.temperature.value()) : QVariant();
+    case humidityColumn:
+      return entry.humidity.has_value() ? QVariant(entry.humidity.value()) : QVariant();
+    default:
+      return {};
+    }
+  }
   if (role != Qt::DisplayRole) {
     return {};
   }

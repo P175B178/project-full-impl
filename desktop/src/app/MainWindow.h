@@ -37,6 +37,8 @@ public:
   ~MainWindow() override;
 
 private:
+  void exportHistoryCsv();
+  void exportChartsPng();
   void showDevice(const QString &groupId);
   void updateScope(); // apply the ticked devices to the charts and the alert log
 
