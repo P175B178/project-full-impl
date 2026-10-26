@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(BUILD_TESTING "Build the unit tests" ON)
+
 # Qt 6 from the dev container (installed under /opt/qt, found through
 # CMAKE_PREFIX_PATH).
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -42,3 +44,9 @@ target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets)
 # Inject project version so the program can report it without hardcoding.
 target_compile_definitions(warden-console PRIVATE WARDEN_CONSOLE_VERSION="${PROJECT_VERSION}")
 warden_configure_target(warden-console)
+
+# ── Tests ──
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

@@ -31,6 +31,16 @@ cmake --preset debug && cmake --build --preset debug
 
 ---
 
+## Tests
+
+**VS Code task:** `Run tests` — also **Tasks: Run Test Task**
+
+```bash
+ctest --preset debug
+```
+
+---
+
 ## Utilities
 
 ### Clean build directories
