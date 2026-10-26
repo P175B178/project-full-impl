@@ -7,7 +7,7 @@
       "name": "Debug",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/desktop",
+      "program": "${workspaceFolder}/build/debug/warden-console",
       "args": [],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build",

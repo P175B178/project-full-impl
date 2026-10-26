@@ -16,7 +16,7 @@
     {
       "label": "Run",
       "type": "shell",
-      "command": "./build/debug/desktop",
+      "command": "./build/debug/warden-console",
       "dependsOn": "Build",
       "problemMatcher": []
     },

@@ -6,7 +6,7 @@ project for module P175B178 — Modern Application of C++ for Hardware Control.
 | Folder | What is in it |
 | ------ | ------------- |
 | [`device/`](device/README.md) | The program running on the Raspberry Pi |
-| `desktop/` | The Qt desktop program (milestone 3) |
+| [`desktop/`](desktop/README.md) | Warden Console, the desktop program that monitors the devices |
 | [`protocol/`](protocol/README.md) | The MQTT message contract both programs follow |
 | [`broker/`](broker/README.md) | Local MQTT brokers, and the settings for the course broker |
 
