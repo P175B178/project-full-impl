@@ -4,6 +4,7 @@
 #include "app/DeviceDetailPanel.h"
 #include "app/DeviceListPanel.h"
 #include "app/LogPanel.h"
+#include "app/ViolationHighlightDelegate.h"
 #include "core/DeviceModel.h"
 #include "core/DeviceMonitor.h"
 #include "core/DeviceState.h"
@@ -47,6 +48,7 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
       , m_gateway(&gateway)
       , m_connectionState(new QLabel(this)) {
   m_ui->setupUi(this);
+  m_ui->historyView->setItemDelegate(new ViolationHighlightDelegate(m_ui->historyView));
   m_ui->historyView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
   m_ui->historyView->verticalHeader()->setVisible(false);
   m_ui->deviceList->setModel(m_devices);
@@ -103,7 +105,7 @@ void MainWindow::showDevice(const QString &groupId) {
   m_ui->deviceStack->setCurrentWidget(m_ui->detailPanel);
   m_ui->historyStack->setCurrentWidget(m_ui->historyPage);
   core::HistoryModel *history = m_monitor->historyFor(groupId);
-  m_ui->detailPanel->showDevice(*device);
+  m_ui->detailPanel->showDevice(*device, history);
   if (m_ui->historyView->model() != history) {
     m_ui->historyView->setModel(history);
   }

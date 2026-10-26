@@ -11,6 +11,8 @@
 #include <QTime>
 #include <QTimeZone>
 
+#include <optional>
+
 using namespace warden::core;
 using namespace warden::messages;
 
@@ -44,6 +46,10 @@ observation::Reading humidity(int second, double percent) {
 }
 
 QString cell(const HistoryModel &model, int row, int column) { return model.data(model.index(row, column)).toString(); }
+
+bool violates(const HistoryModel &model, int row, int column) {
+  return model.data(model.index(row, column), HistoryModel::violationRole).toBool();
+}
 
 } // namespace
 
@@ -81,6 +87,48 @@ TEST(HistoryModelTest, MissingMetricShowsDash) {
   fixture.model.addReading(temperature(1, 23.5)); // no humidity this row
 
   EXPECT_EQ(cell(fixture.model, 0, HistoryModel::humidityColumn), "—");
+}
+
+TEST(HistoryModelTest, NoThresholdMeansNoViolation) {
+  TestedModel fixture;
+  fixture.model.addReading(temperature(1, 99.0));
+
+  EXPECT_FALSE(violates(fixture.model, 0, HistoryModel::temperatureColumn));
+}
+
+TEST(HistoryModelTest, FlagsOnlyTheBreachingMetricCell) {
+  TestedModel fixture;
+  fixture.model.setTemperatureThreshold(30.0);
+  fixture.model.setHumidityThreshold(80.0);
+
+  fixture.model.addReading(temperature(1, 35.0)); // over temp threshold
+  fixture.model.addReading(humidity(1, 45.0));    // under humidity threshold
+
+  EXPECT_TRUE(violates(fixture.model, 0, HistoryModel::temperatureColumn));
+  EXPECT_FALSE(violates(fixture.model, 0, HistoryModel::humidityColumn));
+  EXPECT_FALSE(violates(fixture.model, 0, HistoryModel::timeColumn));
+}
+
+TEST(HistoryModelTest, ChangingThresholdReevaluatesExistingRows) {
+  TestedModel fixture;
+  fixture.model.addReading(temperature(1, 28.0));
+
+  EXPECT_FALSE(violates(fixture.model, 0, HistoryModel::temperatureColumn));
+
+  fixture.model.setTemperatureThreshold(25.0);
+  EXPECT_TRUE(violates(fixture.model, 0, HistoryModel::temperatureColumn));
+
+  fixture.model.setTemperatureThreshold(std::nullopt);
+  EXPECT_FALSE(violates(fixture.model, 0, HistoryModel::temperatureColumn));
+}
+
+TEST(HistoryModelTest, ValueEqualToThresholdIsNotAViolation) {
+  TestedModel fixture;
+  fixture.model.setTemperatureThreshold(30.0);
+
+  fixture.model.addReading(temperature(1, 30.0));
+
+  EXPECT_FALSE(violates(fixture.model, 0, HistoryModel::temperatureColumn));
 }
 
 TEST(HistoryModelTest, CapacityDropsOldestRows) {

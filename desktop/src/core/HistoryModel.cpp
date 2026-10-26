@@ -19,6 +19,16 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const {
   }
   const Entry &entry = m_entries.at(index.row());
 
+  if (role == violationRole) {
+    switch (index.column()) {
+    case temperatureColumn:
+      return temperatureExceeds(entry);
+    case humidityColumn:
+      return humidityExceeds(entry);
+    default:
+      return false;
+    }
+  }
   if (role != Qt::DisplayRole) {
     return {};
   }
@@ -83,6 +93,22 @@ void HistoryModel::addReading(const messages::observation::Reading &reading) {
   enforceCapacity();
 }
 
+void HistoryModel::setTemperatureThreshold(std::optional<double> celsius) {
+  if (m_temperatureThreshold == celsius) {
+    return;
+  }
+  m_temperatureThreshold = celsius;
+  refreshViolations();
+}
+
+void HistoryModel::setHumidityThreshold(std::optional<double> percent) {
+  if (m_humidityThreshold == percent) {
+    return;
+  }
+  m_humidityThreshold = percent;
+  refreshViolations();
+}
+
 void HistoryModel::clear() {
   if (m_entries.isEmpty()) {
     return;
@@ -97,6 +123,17 @@ void HistoryModel::setCapacity(int rows) {
   enforceCapacity();
 }
 
+// Strictly greater, as on the device: a value equal to its threshold is not exceeded.
+bool HistoryModel::temperatureExceeds(const Entry &entry) const {
+  return m_temperatureThreshold.has_value() && entry.temperature.has_value() &&
+         entry.temperature.value() > m_temperatureThreshold.value();
+}
+
+bool HistoryModel::humidityExceeds(const Entry &entry) const {
+  return m_humidityThreshold.has_value() && entry.humidity.has_value() &&
+         entry.humidity.value() > m_humidityThreshold.value();
+}
+
 void HistoryModel::enforceCapacity() {
   if (m_capacity <= 0 || m_entries.size() <= m_capacity) {
     return;
@@ -105,6 +142,14 @@ void HistoryModel::enforceCapacity() {
   beginRemoveRows(QModelIndex(), 0, excess - 1);
   m_entries.remove(0, excess);
   endRemoveRows();
+}
+
+void HistoryModel::refreshViolations() {
+  if (m_entries.isEmpty()) {
+    return;
+  }
+  const int last = static_cast<int>(m_entries.size()) - 1;
+  emit dataChanged(index(0, 0), index(last, columnTotal - 1), {violationRole});
 }
 
 } // namespace warden::core

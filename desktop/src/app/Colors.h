@@ -15,4 +15,8 @@ namespace warden::app {
 /// Offline or a state not known yet (nullopt).
 [[nodiscard]] QColor stateColor(std::optional<messages::status_message::State> state);
 
+/// A history cell above its threshold: a translucent red, which tints a light table and a dark one
+/// alike and keeps the text readable.
+[[nodiscard]] QColor violationBackground();
+
 } // namespace warden::app

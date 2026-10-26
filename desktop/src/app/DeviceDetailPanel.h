@@ -9,6 +9,7 @@
 
 namespace warden::core {
 struct DeviceState;
+class HistoryModel;
 } // namespace warden::core
 
 namespace warden::messages {
@@ -33,8 +34,9 @@ public:
 
   void setGateway(messages::DeviceGateway *gateway);
 
-  /// The controls are enabled while the device is online and the gateway connected.
-  void showDevice(const core::DeviceState &device);
+  /// The controls are enabled while the device is online and the gateway connected. `history`, the
+  /// device's, gets the thresholds the console knows, to highlight the readings above them.
+  void showDevice(const core::DeviceState &device, core::HistoryModel *history);
 
   /// For when no device is selected.
   void clearDevice();
@@ -54,6 +56,7 @@ private:
 
   void loadEditors(const DeviceConfig &config);
   void showSettings(const DeviceConfig &config);
+  void applyThresholds();
   void publishTemperatureThreshold();
   void publishHumidityThreshold();
   void publishInterval();
@@ -61,6 +64,7 @@ private:
 
   std::unique_ptr<Ui::DeviceDetailPanel> m_ui;
   messages::DeviceGateway *m_gateway = nullptr;
+  core::HistoryModel *m_history      = nullptr; // the shown device's
   QHash<QString, DeviceConfig> m_configs;
   QString m_currentGroup; // empty when no device is shown
 };

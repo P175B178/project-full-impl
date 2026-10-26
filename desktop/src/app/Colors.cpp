@@ -24,4 +24,11 @@ QColor stateColor(std::optional<messages::status_message::State> state) {
   return gray;
 }
 
+QColor violationBackground() {
+  constexpr int alpha = 90; // about a third opaque
+  QColor red(QStringLiteral("#f44336"));
+  red.setAlpha(alpha);
+  return red;
+}
+
 } // namespace warden::app

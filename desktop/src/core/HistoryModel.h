@@ -24,6 +24,9 @@ public:
   static constexpr int humidityColumn    = 2;
   static constexpr int columnTotal       = 3; // sentinel: number of columns
 
+  /// Custom data role (bool): true when this cell's value exceeds its metric's threshold.
+  static constexpr int violationRole = Qt::UserRole + 1;
+
   /// Default row cap — an hour of measurement cycles at the shortest interval, 2 s.
   static constexpr int defaultCapacity = 1800;
 
@@ -37,6 +40,11 @@ public:
 
   /// Merges the reading into its timestamp's row, or starts one, dropping the oldest when full.
   void addReading(const messages::observation::Reading &reading);
+
+  /// Set or clear (nullopt) the thresholds used to flag violations. Existing rows are
+  /// re-evaluated, so the highlight follows a new threshold.
+  void setTemperatureThreshold(std::optional<double> celsius);
+  void setHumidityThreshold(std::optional<double> percent);
 
   /// Drop all history.
   void clear();
@@ -54,9 +62,14 @@ private:
   };
 
   static void apply(Entry &entry, const messages::observation::Reading &reading);
+  [[nodiscard]] bool temperatureExceeds(const Entry &entry) const;
+  [[nodiscard]] bool humidityExceeds(const Entry &entry) const;
   void enforceCapacity();
+  void refreshViolations();
 
   QList<Entry> m_entries;
+  std::optional<double> m_temperatureThreshold;
+  std::optional<double> m_humidityThreshold;
   int m_capacity = defaultCapacity;
 };
 
