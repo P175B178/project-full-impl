@@ -26,6 +26,10 @@
     }
   },
 
+  // Docker Desktop resolves host.docker.internal to the host, where the broker runs;
+  // Docker Engine on Linux needs it mapped.
+  "runArgs": ["--add-host=host.docker.internal:host-gateway"],
+
   // Open http://localhost:6080 (password: vscode) to see the desktop. In VS Code:
   // Command Palette -> "Simple Browser: Show" -> http://localhost:6080
   "forwardPorts": [6080, 5901],
@@ -54,9 +58,11 @@
 
   // GUI apps render onto the in-container desktop-lite X display.
   // Qt expects a UTF-8 locale and warns at startup without one.
+  // The console looks for the broker on the host, by the name Docker gives it.
   "containerEnv": {
     "DISPLAY": ":1",
-    "LANG": "C.UTF-8"
+    "LANG": "C.UTF-8",
+    "WARDEN_BROKER_HOST": "host.docker.internal"
   },
 
   "postCreateCommand": "git config core.hooksPath .githooks",

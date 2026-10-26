@@ -13,3 +13,5 @@ TEST(TopicsTest, FollowTheProtocol) {
   EXPECT_EQ(topics::interval("group-1"), "config/group-1/interval");
   EXPECT_EQ(topics::forcedState("group-1"), "config/group-1/state");
 }
+
+TEST(TopicsTest, AnyGroupMakesAFilterForEveryGroup) { EXPECT_EQ(topics::status(topics::anyGroup), "sensors/+/status"); }

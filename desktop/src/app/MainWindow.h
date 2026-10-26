@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mqtt/BrokerSettings.h"
+
 #include <QMainWindow>
 #include <QString>
 
@@ -17,6 +19,10 @@ namespace warden::messages {
 class DeviceGateway;
 } // namespace warden::messages
 
+namespace warden::mqtt {
+class MqttConnection;
+} // namespace warden::mqtt
+
 namespace Ui {
 class MainWindow;
 }
@@ -26,28 +32,32 @@ namespace warden::app {
 class GroupFilterProxyModel;
 
 /// Top-level window: it owns the device data and shows it. The data comes from the gateway that
-/// main() hands it.
+/// main() hands it: the broker's connection, also passed as `broker` for its settings, or the
+/// simulator, which has none (`broker` is nullptr).
 /// Laid out in MainWindow.ui; it wires the panels together.
 class MainWindow : public QMainWindow {
   Q_OBJECT
   Q_DISABLE_COPY_MOVE(MainWindow)
 
 public:
-  explicit MainWindow(messages::DeviceGateway &gateway, QWidget *parent = nullptr);
+  MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *broker, QWidget *parent = nullptr);
   ~MainWindow() override;
 
 private:
   void exportHistoryCsv();
   void exportChartsPng();
+  void connectToBroker();
   void showDevice(const QString &groupId);
   void updateScope(); // apply the ticked devices to the charts and the alert log
 
   std::unique_ptr<Ui::MainWindow> m_ui;
+  mqtt::BrokerSettings m_settings;
   core::DeviceModel *m_devices;
   core::DeviceMonitor *m_monitor;
   core::AlertLogModel *m_alerts;
   GroupFilterProxyModel *m_alertFilter;
   messages::DeviceGateway *m_gateway; // main() owns it
+  mqtt::MqttConnection *m_broker;     // the same object, or nullptr
   QLabel *m_connectionState;          // permanent, at the right of the status bar
   QString m_currentGroup;             // selected device, empty when none
 };

@@ -13,7 +13,7 @@ namespace warden::sim {
 
 /// A `DeviceGateway` that needs no broker: two made-up devices, each publishing on a timer of its
 /// own. One device's temperature jumps now and then, the other stays steady. Their messages are
-/// JSON on the device's topics, so the console parses them as it will a broker's. Like a device,
+/// JSON on the device's topics, so the console parses them as it does a broker's. Like a device,
 /// each takes the thresholds and the interval it is sent; like a broker, the simulator hands the
 /// retained settings back.
 class SimulatedGateway : public messages::DeviceGateway {

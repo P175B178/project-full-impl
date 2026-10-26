@@ -23,6 +23,14 @@
       "problemMatcher": []
     },
     {
+      "label": "Run (simulated)",
+      "type": "shell",
+      // Two made-up devices, no broker needed.
+      "command": "LSAN_OPTIONS=suppressions=lsan.supp:print_suppressions=0 ./build/debug/warden-console --simulate",
+      "dependsOn": "Build",
+      "problemMatcher": []
+    },
+    {
       "label": "Run tests",
       "type": "shell",
       "command": "ctest --preset debug",

@@ -15,6 +15,7 @@
 #include "core/HistoryModel.h"
 #include "messages/DeviceGateway.h"
 #include "messages/StatusMessage.h"
+#include "mqtt/MqttConnection.h"
 
 #include <QAbstractItemModel>
 #include <QAction>
@@ -49,7 +50,7 @@ QString stateText(messages::DeviceGateway::State state) {
 
 } // namespace
 
-MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
+MainWindow::MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *broker, QWidget *parent)
       : QMainWindow(parent)
       , m_ui(std::make_unique<Ui::MainWindow>())
       , m_devices(new core::DeviceModel(this))
@@ -57,6 +58,7 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
       , m_alerts(new core::AlertLogModel(this))
       , m_alertFilter(new GroupFilterProxyModel(core::AlertLogModel::groupIdRole, this))
       , m_gateway(&gateway)
+      , m_broker(broker)
       , m_connectionState(new QLabel(this)) {
   m_ui->setupUi(this);
   m_ui->historyView->setItemDelegate(new ViolationHighlightDelegate(m_ui->historyView));
@@ -80,6 +82,14 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   // Ticking devices in the list picks the ones the charts and the alert log show.
   connect(m_devices, &core::DeviceModel::checkedDevicesChanged, this, &MainWindow::updateScope);
   updateScope();
+
+  // Only a broker has errors to report; the simulator has none.
+  if (m_broker != nullptr) {
+    connect(m_broker, &mqtt::MqttConnection::errorOccurred, this, [this](const QString &message) {
+      statusBar()->showMessage(QStringLiteral("Error: %1").arg(message));
+      m_ui->logPanel->appendMessage(QStringLiteral("Error: %1").arg(message));
+    });
+  }
 
   // View menu: show or hide the docks.
   auto *viewMenu = menuBar()->addMenu(QStringLiteral("&View"));
@@ -115,11 +125,20 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
     m_connectionState->setText(stateText(state));
     m_ui->logPanel->appendMessage(stateText(state));
     showDevice(m_currentGroup); // the controls work only while connected
+    if (state == messages::DeviceGateway::State::Connected) {
+      statusBar()->clearMessage(); // "Connecting to …" is over, and so is any earlier error
+    }
   });
 
   m_ui->detailPanel->setGateway(m_gateway);
 
-  m_gateway->start();
+  if (m_broker == nullptr) {
+    m_gateway->start();
+    statusBar()->showMessage(QStringLiteral("Showing simulated devices, not a broker's"));
+    m_ui->logPanel->appendMessage(QStringLiteral("Showing simulated devices"));
+  } else {
+    connectToBroker();
+  }
 }
 
 MainWindow::~MainWindow() = default;
@@ -148,6 +167,14 @@ void MainWindow::exportChartsPng() {
   const QPixmap pixmap = m_ui->charts->grab();
   statusBar()->showMessage(pixmap.save(path) ? QStringLiteral("Charts exported to %1").arg(path)
                                              : QStringLiteral("Could not save image to %1").arg(path));
+}
+
+void MainWindow::connectToBroker() {
+  const QString message = QStringLiteral("Connecting to %1:%2…").arg(m_settings.host).arg(m_settings.port);
+  statusBar()->showMessage(message);
+  m_ui->logPanel->appendMessage(message);
+  m_broker->setBroker(m_settings);
+  m_broker->start();
 }
 
 void MainWindow::showDevice(const QString &groupId) {
