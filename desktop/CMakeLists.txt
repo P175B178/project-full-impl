@@ -11,22 +11,34 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt_standard_project_setup()
 
-qt_add_executable(warden-console
-    src/main.cpp
-    src/app/MainWindow.cpp
-    src/messages/DeviceGateway.cpp
+# Settings for this project's own targets, so third-party code keeps its own.
+function(warden_configure_target target)
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
+    set_target_properties(${target} PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+endfunction()
+
+# ── Core and messages ──
+# Parsers and models: Qt6::Core only, no widgets and no broker, so the unit
+# tests can run them headless.
+add_library(warden_core STATIC
     src/core/DeviceModel.cpp
     src/core/DeviceState.cpp
+    src/messages/DeviceGateway.cpp
     src/messages/MessageRouter.cpp
     src/messages/Observation.cpp
     src/messages/Topics.cpp
+)
+target_include_directories(warden_core PUBLIC src)
+target_link_libraries(warden_core PUBLIC Qt6::Core)
+warden_configure_target(warden_core)
+
+# ── Main executable ──
+qt_add_executable(warden-console
+    src/main.cpp
+    src/app/MainWindow.cpp
     src/sim/SimulatedGateway.cpp
 )
-target_include_directories(warden-console PRIVATE src)
-target_link_libraries(warden-console PRIVATE Qt6::Widgets)
+target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets)
 # Inject project version so the program can report it without hardcoding.
 target_compile_definitions(warden-console PRIVATE WARDEN_CONSOLE_VERSION="${PROJECT_VERSION}")
-
-# Compiler warnings, treated as errors
-target_compile_options(warden-console PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
-set_target_properties(warden-console PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+warden_configure_target(warden-console)
