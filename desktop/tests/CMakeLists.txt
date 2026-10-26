@@ -15,6 +15,8 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(warden_console_tests
     test_device_model.cpp
+    test_device_monitor.cpp
+    test_history_model.cpp
     test_message_router.cpp
     test_observation.cpp
     test_status_message.cpp

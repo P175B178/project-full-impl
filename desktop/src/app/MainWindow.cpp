@@ -5,11 +5,14 @@
 #include "app/DeviceListPanel.h"
 #include "app/LogPanel.h"
 #include "core/DeviceModel.h"
+#include "core/DeviceMonitor.h"
 #include "core/DeviceState.h"
+#include "core/HistoryModel.h"
 #include "messages/DeviceGateway.h"
 
 #include <QAbstractItemModel>
 #include <QDockWidget>
+#include <QHeaderView>
 #include <QLabel>
 #include <QMenuBar>
 #include <QStackedWidget>
@@ -40,14 +43,18 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
       : QMainWindow(parent)
       , m_ui(std::make_unique<Ui::MainWindow>())
       , m_devices(new core::DeviceModel(this))
+      , m_monitor(new core::DeviceMonitor(this))
       , m_gateway(&gateway)
       , m_connectionState(new QLabel(this)) {
   m_ui->setupUi(this);
+  m_ui->historyView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
+  m_ui->historyView->verticalHeader()->setVisible(false);
   m_ui->deviceList->setModel(m_devices);
   resizeDocks({m_ui->deviceDock}, {deviceListWidth}, Qt::Horizontal); // room for every column
   resizeDocks({m_ui->logDock}, {logHeight}, Qt::Vertical);
 
-  // The list selection drives the detail panel; refresh it when the device's data updates.
+  // The list selection drives the detail panel and the history, which refresh when the device's
+  // data updates.
   connect(m_ui->deviceList, &DeviceListPanel::deviceSelected, this, &MainWindow::showDevice);
   connect(m_devices, &QAbstractItemModel::dataChanged, this, [this] { showDevice(m_currentGroup); });
 
@@ -56,8 +63,9 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   viewMenu->addAction(m_ui->deviceDock->toggleViewAction());
   viewMenu->addAction(m_ui->logDock->toggleViewAction());
 
-  // The gateway only emits; the window routes its signals into the model and the log.
+  // The gateway only emits; the window routes its signals into the models and the log.
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);
+  connect(m_gateway, &messages::DeviceGateway::readingReceived, m_monitor, &core::DeviceMonitor::addReading);
   connect(m_gateway, &messages::DeviceGateway::statusReceived, m_devices, &core::DeviceModel::applyStatus);
   connect(m_gateway, &messages::DeviceGateway::messageDropped, m_ui->logPanel, &LogPanel::appendMessage);
 
@@ -78,11 +86,18 @@ void MainWindow::showDevice(const QString &groupId) {
   const core::DeviceState *device = groupId.isEmpty() ? nullptr : m_devices->device(groupId);
   if (device == nullptr) {
     m_ui->detailPanel->clearDevice();
+    m_ui->historyView->setModel(nullptr);
     m_ui->deviceStack->setCurrentWidget(m_ui->deviceHint);
+    m_ui->historyStack->setCurrentWidget(m_ui->historyHint);
     return;
   }
   m_ui->deviceStack->setCurrentWidget(m_ui->detailPanel);
+  m_ui->historyStack->setCurrentWidget(m_ui->historyPage);
+  core::HistoryModel *history = m_monitor->historyFor(groupId);
   m_ui->detailPanel->showDevice(*device);
+  if (m_ui->historyView->model() != history) {
+    m_ui->historyView->setModel(history);
+  }
 }
 
 } // namespace warden::app

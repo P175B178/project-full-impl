@@ -9,6 +9,7 @@ class QLabel;
 
 namespace warden::core {
 class DeviceModel;
+class DeviceMonitor;
 } // namespace warden::core
 
 namespace warden::messages {
@@ -37,6 +38,7 @@ private:
 
   std::unique_ptr<Ui::MainWindow> m_ui;
   core::DeviceModel *m_devices;
+  core::DeviceMonitor *m_monitor;
   messages::DeviceGateway *m_gateway; // main() owns it
   QLabel *m_connectionState;          // permanent, at the right of the status bar
   QString m_currentGroup;             // selected device, empty when none
