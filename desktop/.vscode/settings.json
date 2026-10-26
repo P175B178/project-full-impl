@@ -10,6 +10,9 @@
   // C/C++ IntelliSense — driven by CMake Tools
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 
+  // clang-tidy inline errors (uses compile_commands.json from the active CMake preset)
+  "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+
   // clang-format on save, for C++ files only (.cpp and .h). Set globally, the
   // C/C++ extension would be asked to format JSON, YAML and Markdown too.
   "[cpp]": {

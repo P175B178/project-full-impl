@@ -6,7 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(ENABLE_CLANG_TIDY "Run clang-tidy on every translation unit during build" OFF)
 option(BUILD_TESTING "Build the unit tests" ON)
+
+if(ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE clang-tidy REQUIRED)
+endif()
 
 # Qt 6 from the dev container (installed under /opt/qt, found through
 # CMAKE_PREFIX_PATH).
@@ -17,6 +22,11 @@ qt_standard_project_setup()
 function(warden_configure_target target)
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
     set_target_properties(${target} PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+    if(ENABLE_CLANG_TIDY)
+        # The header filter leaves out the code Qt generates into the build directory.
+        set_target_properties(${target} PROPERTIES
+            CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--header-filter=^${PROJECT_SOURCE_DIR}/(src|tests)/")
+    endif()
 endfunction()
 
 # ── Core and messages ──

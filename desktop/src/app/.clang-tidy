@@ -1,0 +1,6 @@
+InheritParentConfig: true
+
+# cppcoreguidelines-owning-memory: a Qt parent deletes its widgets, which the check
+# cannot see. It stays on everywhere outside the GUI.
+Checks: >
+  -cppcoreguidelines-owning-memory

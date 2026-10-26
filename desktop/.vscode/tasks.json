@@ -33,6 +33,13 @@
       },
       "problemMatcher": []
     },
+    // ── Checks ──
+    {
+      "label": "Workflow: Tidy",
+      "type": "shell",
+      "command": "cmake --workflow --preset tidy",
+      "problemMatcher": ["$gcc"]
+    },
     // ── Utilities ──
     {
       "label": "Format all sources",

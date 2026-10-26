@@ -15,16 +15,37 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
       }
+    },
+    {
+      "name": "clang-tidy",
+      "displayName": "Clang-Tidy",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "ENABLE_CLANG_TIDY": "ON"
+      }
     }
   ],
   "buildPresets": [
-    { "name": "debug", "configurePreset": "debug" }
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "clang-tidy", "configurePreset": "clang-tidy", "cleanFirst": true }
   ],
   "testPresets": [
     {
       "name": "debug",
       "configurePreset": "debug",
       "output": { "outputOnFailure": true }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "tidy",
+      "displayName": "Tidy — static analysis",
+      "steps": [
+        { "type": "configure", "name": "clang-tidy" },
+        { "type": "build",     "name": "clang-tidy" }
+      ]
     }
   ]
 }
