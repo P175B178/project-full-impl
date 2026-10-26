@@ -1,11 +1,10 @@
 #include "app/MainWindow.h"
 #include "ui_MainWindow.h"
 
-#include "app/StateColorDelegate.h"
+#include "app/DeviceListPanel.h"
 #include "core/DeviceModel.h"
 #include "messages/DeviceGateway.h"
 
-#include <QHeaderView>
 #include <QLabel>
 #include <QStatusBar>
 
@@ -34,10 +33,7 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
       , m_gateway(&gateway)
       , m_connectionState(new QLabel(this)) {
   m_ui->setupUi(this);
-  m_ui->deviceView->setModel(m_devices);
-  m_ui->deviceView->setItemDelegateForColumn(core::DeviceModel::stateColumn, new StateColorDelegate(this));
-  m_ui->deviceView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
-  m_ui->deviceView->verticalHeader()->setVisible(false);
+  m_ui->deviceList->setModel(m_devices);
 
   // The gateway only emits; the window routes its signals into the model.
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);

@@ -208,3 +208,16 @@ TEST(DeviceModelTest, StateRoleGivesTheStateOnceItIsKnown) {
   // Only the state column carries it.
   EXPECT_FALSE(fixture.model.data(fixture.model.index(0, DeviceModel::deviceColumn), DeviceModel::stateRole).isValid());
 }
+
+TEST(DeviceModelTest, SortRoleGivesAReadingAsANumber) {
+  TestedModel fixture;
+
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 9.5));
+
+  const auto sortKey = [&fixture](int column) {
+    return fixture.model.data(fixture.model.index(0, column), DeviceModel::sortRole);
+  };
+  EXPECT_EQ(sortKey(DeviceModel::temperatureColumn), QVariant(9.5));
+  EXPECT_FALSE(sortKey(DeviceModel::humidityColumn).isValid()); // no humidity reading yet
+  EXPECT_EQ(sortKey(DeviceModel::deviceColumn), QVariant("group-1-pi5"));
+}

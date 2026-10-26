@@ -2,7 +2,17 @@
 
 #include <QString>
 
+#include <optional>
+
 namespace warden::core {
+
+namespace {
+
+QVariant numberOrNothing(const std::optional<double> &value) {
+  return value.has_value() ? QVariant(value.value()) : QVariant();
+}
+
+} // namespace
 
 DeviceModel::DeviceModel(QObject *parent)
       : QAbstractTableModel(parent) {}
@@ -25,6 +35,15 @@ QVariant DeviceModel::data(const QModelIndex &index, int role) const {
       return {};
     }
     return static_cast<int>(device.state);
+  }
+  if (role == sortRole) {
+    if (index.column() == temperatureColumn) {
+      return numberOrNothing(device.temperature);
+    }
+    if (index.column() == humidityColumn) {
+      return numberOrNothing(device.humidity);
+    }
+    return data(index, Qt::DisplayRole); // the other columns sort by their text
   }
   if (role != Qt::DisplayRole) {
     return {};

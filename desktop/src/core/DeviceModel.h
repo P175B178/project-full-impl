@@ -29,6 +29,10 @@ public:
   /// for a view that shows it in color; no value until the device has reported a status.
   static constexpr int stateRole = Qt::UserRole + 1;
 
+  /// Custom data role: what a view sorts a column by. A reading is a number here, where
+  /// Qt::DisplayRole gives the text "9.5 °C", which would sort after "10.0 °C".
+  static constexpr int sortRole = Qt::UserRole + 2;
+
   explicit DeviceModel(QObject *parent = nullptr);
 
   [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const override;
