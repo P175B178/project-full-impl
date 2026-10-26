@@ -19,7 +19,7 @@ http://localhost:6080 (password `vscode`) in a browser, or in VS Code via **Simp
 cmake --preset debug && cmake --build --preset debug
 ```
 
-**VS Code task:** `Run`
+**VS Code task:** `Run` — with two simulated devices, no broker needed
 
 ```bash
 ./build/debug/warden-console

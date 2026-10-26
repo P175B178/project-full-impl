@@ -11,7 +11,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt_standard_project_setup()
 
-qt_add_executable(warden-console src/main.cpp)
+qt_add_executable(warden-console
+    src/main.cpp
+    src/messages/DeviceGateway.cpp
+    src/messages/MessageRouter.cpp
+    src/messages/Observation.cpp
+    src/messages/Topics.cpp
+    src/sim/SimulatedGateway.cpp
+)
+target_include_directories(warden-console PRIVATE src)
 target_link_libraries(warden-console PRIVATE Qt6::Widgets)
 # Inject project version so the program can report it without hardcoding.
 target_compile_definitions(warden-console PRIVATE WARDEN_CONSOLE_VERSION="${PROJECT_VERSION}")
