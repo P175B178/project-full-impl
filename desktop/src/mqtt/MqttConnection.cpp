@@ -5,6 +5,10 @@
 
 #include <QMqttTopicFilter>
 #include <QMqttTopicName>
+#include <QSsl>
+#include <QSslCertificate>
+#include <QSslConfiguration>
+#include <QSslSocket>
 #include <QTimer>
 
 namespace warden::mqtt {
@@ -27,6 +31,9 @@ constexpr quint8 configQos = 1;
 QString errorText(QMqttClient::ClientError error) {
   if (error == QMqttClient::TransportInvalid) {
     return QStringLiteral("transport error — is the broker reachable?");
+  }
+  if (error == QMqttClient::BadUsernameOrPassword || error == QMqttClient::NotAuthorized) {
+    return QStringLiteral("not authorized — check the username and password");
   }
   return QStringLiteral("connection error (code %1)").arg(static_cast<int>(error));
 }
@@ -79,7 +86,40 @@ void MqttConnection::stop() {
 void MqttConnection::openConnection(const BrokerSettings &settings) {
   m_client->setHostname(settings.host);
   m_client->setPort(settings.port);
-  m_client->connectToHost();
+  m_client->setUsername(settings.username);
+  m_client->setPassword(settings.password);
+  if (!settings.useTls) {
+    m_client->connectToHost();
+    return;
+  }
+  // The system's CAs, plus the one in caCertPath: the brokers in broker/ and the course broker
+  // have a CA of their own.
+  QSslConfiguration tls = QSslConfiguration::defaultConfiguration();
+  if (!settings.caCertPath.isEmpty()) {
+    const QList<QSslCertificate> caCerts =
+        QSslCertificate::fromPath(settings.caCertPath, QSsl::Pem, QSslCertificate::PatternSyntax::FixedString);
+    if (caCerts.isEmpty()) {
+      emit errorOccurred(QStringLiteral("no CA certificate in %1").arg(settings.caCertPath));
+      m_wanted.reset(); // retrying cannot help
+      return;
+    }
+    QList<QSslCertificate> trusted = tls.caCertificates();
+    trusted.append(caCerts);
+    tls.setCaCertificates(trusted);
+  }
+  m_client->connectToHostEncrypted(tls);
+  // The client reports a failed certificate check only as a transport error; its socket knows why.
+  if (auto *socket = qobject_cast<QSslSocket *>(m_client->transport()); socket != nullptr) {
+    connect(socket, &QSslSocket::sslErrors, this, &MqttConnection::reportTlsErrors, Qt::UniqueConnection);
+  }
+}
+
+void MqttConnection::reportTlsErrors(const QList<QSslError> &errors) {
+  if (errors.isEmpty()) {
+    return;
+  }
+  m_wanted.reset(); // retrying cannot fix the certificate
+  emit errorOccurred(QStringLiteral("the broker's certificate failed the check: %1").arg(errors.first().errorString()));
 }
 
 void MqttConnection::createClient() {
@@ -96,7 +136,14 @@ void MqttConnection::createClient() {
     }
   });
   connect(m_client.get(), &QMqttClient::errorChanged, this, [this](QMqttClient::ClientError error) {
-    if (error != QMqttClient::NoError) {
+    if (error == QMqttClient::NoError) {
+      return;
+    }
+    if (error == QMqttClient::BadUsernameOrPassword || error == QMqttClient::NotAuthorized) {
+      m_wanted.reset(); // retrying cannot fix a refused login
+    }
+    // After a failed certificate check, reportTlsErrors() said why; "transport error" would not.
+    if (error != QMqttClient::TransportInvalid || m_wanted) {
       emit errorOccurred(errorText(error));
     }
   });

@@ -30,6 +30,7 @@
 #include <QPixmap>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QTimer>
 
 namespace warden::app {
 
@@ -143,8 +144,14 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, mqtt::MqttConnection *b
     m_gateway->start();
     statusBar()->showMessage(QStringLiteral("Showing simulated devices, not a broker's"));
     m_ui->logPanel->appendMessage(QStringLiteral("Showing simulated devices"));
-  } else {
+  } else if (m_settings.username.isEmpty() || !m_settings.password.isEmpty()) {
     connectToBroker();
+  } else {
+    // The password is not stored: a broker with a login asks for it on every start.
+    const QString message = QStringLiteral("The broker needs your password: Broker > Connect…");
+    statusBar()->showMessage(message);
+    m_ui->logPanel->appendMessage(message);
+    QTimer::singleShot(0, this, &MainWindow::openConnectionDialog);
   }
 }
 

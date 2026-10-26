@@ -12,8 +12,8 @@ class ConnectionDialog;
 
 namespace warden::app {
 
-/// Edits the broker connection, laid out in ConnectionDialog.ui: host and port. `settings()` gives
-/// the result once accepted.
+/// Edits the broker connection, laid out in ConnectionDialog.ui: host, port, login, and TLS with
+/// the CA to check the broker against. `settings()` gives the result once accepted.
 class ConnectionDialog : public QDialog {
   Q_OBJECT
   Q_DISABLE_COPY_MOVE(ConnectionDialog)

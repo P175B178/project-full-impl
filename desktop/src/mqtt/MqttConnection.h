@@ -4,7 +4,9 @@
 #include "mqtt/BrokerSettings.h"
 
 #include <QByteArray>
+#include <QList>
 #include <QMqttClient>
+#include <QSslError>
 #include <QString>
 
 #include <memory>
@@ -26,7 +28,8 @@ public:
   void setBroker(const BrokerSettings &settings);
 
   /// Connect to the broker, dropping any current connection first. A failed or lost connection is
-  /// retried every few seconds.
+  /// retried every few seconds, unless the broker refused the login or its certificate failed the
+  /// check.
   void start() override;
   void stop() override;
   [[nodiscard]] State state() const override;
@@ -36,19 +39,21 @@ public:
   void publishForcedState(const QString &groupId, messages::status_message::State state) override;
 
 signals:
-  /// A human-readable description of a transport error, or of a command that could not be sent.
+  /// A human-readable description of a transport or authentication error, or of a command that
+  /// could not be sent.
   void errorOccurred(const QString &message);
 
 private:
   void createClient();
   void openConnection(const BrokerSettings &settings);
+  void reportTlsErrors(const QList<QSslError> &errors);
   void subscribeAll();
   void publishConfig(const QString &topicName, const QByteArray &payload, bool retain);
 
   std::unique_ptr<QMqttClient> m_client;
   QTimer *m_reconnectTimer;
   BrokerSettings m_broker;
-  /// The broker to stay connected to; empty when told to disconnect.
+  /// The broker to stay connected to; empty when told to disconnect, or once retrying cannot help.
   std::optional<BrokerSettings> m_wanted;
 };
 

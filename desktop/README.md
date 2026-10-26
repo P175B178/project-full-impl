@@ -69,6 +69,21 @@ remembers for the next start.
 To try it without a device, publish `protocol/examples/observation-temperature.json` on
 `sensors/group-1/temperature` from MQTT Explorer.
 
+### TLS and a password
+
+The course broker and `broker/dev-tls` take only TLS connections from a known user. In
+**Broker > Connect…**, tick **Use TLS** and fill in:
+
+| Setting | `broker/dev-tls` | Course broker |
+| ------- | ---------------- | ------------- |
+| Host | `host.docker.internal` | the address given in class |
+| Port | 8883 | 8883 |
+| Username, Password | your group's, from Moodle | your group's, from Moodle |
+| CA certificate | `../broker/dev-tls/certs/ca.crt` | `../broker/course/certs/ca.crt` |
+
+A relative path is relative to `desktop/`, where the Run task starts the console. The password is
+not stored: the console asks for it on every start.
+
 ---
 
 ## Utilities
