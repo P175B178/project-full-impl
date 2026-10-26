@@ -67,6 +67,11 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_monitor, &core::DeviceMonitor::addReading);
   connect(m_gateway, &messages::DeviceGateway::statusReceived, m_devices, &core::DeviceModel::applyStatus);
+  connect(m_gateway, &messages::DeviceGateway::temperatureThresholdReceived, m_ui->detailPanel,
+          &DeviceDetailPanel::setTemperatureThreshold);
+  connect(m_gateway, &messages::DeviceGateway::humidityThresholdReceived, m_ui->detailPanel,
+          &DeviceDetailPanel::setHumidityThreshold);
+  connect(m_gateway, &messages::DeviceGateway::intervalReceived, m_ui->detailPanel, &DeviceDetailPanel::setInterval);
   connect(m_gateway, &messages::DeviceGateway::messageDropped, m_ui->logPanel, &LogPanel::appendMessage);
   connect(m_gateway, &messages::DeviceGateway::commandPublished, m_ui->logPanel, &LogPanel::appendMessage);
 

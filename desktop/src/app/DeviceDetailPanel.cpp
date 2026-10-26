@@ -3,6 +3,7 @@
 
 #include "app/Colors.h"
 #include "core/DeviceState.h"
+#include "messages/ConfigMessage.h"
 #include "messages/DeviceGateway.h"
 #include "messages/Observation.h"
 #include "messages/StatusMessage.h"
@@ -22,15 +23,6 @@ namespace warden::app {
 
 namespace {
 
-// The device's limits (device/config/warden.toml): it rejects a value outside them. The
-// temperature limits are its default plausible range.
-constexpr double minTemperatureThreshold = 0.0;
-constexpr double maxTemperatureThreshold = 50.0;
-constexpr double minHumidityThreshold    = 0.0;
-constexpr double maxHumidityThreshold    = 100.0;
-constexpr int minInterval                = 2;
-constexpr int maxInterval                = 3600;
-
 // A round indicator in the color of the device's state.
 QString indicatorStyle(const core::DeviceState &device) {
   const QColor color = stateColor(device.hasStatus ? std::optional(device.state) : std::nullopt);
@@ -45,13 +37,16 @@ DeviceDetailPanel::DeviceDetailPanel(QWidget *parent)
       : QWidget(parent)
       , m_ui(std::make_unique<Ui::DeviceDetailPanel>()) {
   m_ui->setupUi(this);
-  m_ui->temperatureThresholdSpin->setRange(minTemperatureThreshold, maxTemperatureThreshold);
-  m_ui->humidityThresholdSpin->setRange(minHumidityThreshold, maxHumidityThreshold);
-  m_ui->intervalSpin->setRange(minInterval, maxInterval);
-  m_ui->temperatureThresholdSlider->setRange(static_cast<int>(minTemperatureThreshold),
-                                             static_cast<int>(maxTemperatureThreshold));
-  m_ui->humidityThresholdSlider->setRange(static_cast<int>(minHumidityThreshold),
-                                          static_cast<int>(maxHumidityThreshold));
+  // The device rejects a value outside its limits, so the controls do not offer one.
+  m_ui->temperatureThresholdSpin->setRange(messages::config_message::minTemperatureThreshold,
+                                           messages::config_message::maxTemperatureThreshold);
+  m_ui->humidityThresholdSpin->setRange(messages::config_message::minHumidityThreshold,
+                                        messages::config_message::maxHumidityThreshold);
+  m_ui->intervalSpin->setRange(messages::config_message::minInterval, messages::config_message::maxInterval);
+  m_ui->temperatureThresholdSlider->setRange(static_cast<int>(messages::config_message::minTemperatureThreshold),
+                                             static_cast<int>(messages::config_message::maxTemperatureThreshold));
+  m_ui->humidityThresholdSlider->setRange(static_cast<int>(messages::config_message::minHumidityThreshold),
+                                          static_cast<int>(messages::config_message::maxHumidityThreshold));
 
   // Only Set sends a value: editing alone sends nothing.
   connect(m_ui->temperatureThresholdSetButton, &QPushButton::clicked, this,
@@ -93,10 +88,14 @@ void DeviceDetailPanel::clearDevice() {
   m_ui->temperatureValueLabel->setText(QStringLiteral("—"));
   m_ui->humidityValueLabel->setText(QStringLiteral("—"));
   m_ui->lastUpdateValueLabel->setText(QStringLiteral("—"));
+  showSettings(DeviceConfig{});
 }
 
 void DeviceDetailPanel::showDevice(const core::DeviceState &device) {
-  m_currentGroup = device.groupId;
+  if (device.groupId != m_currentGroup) {
+    m_currentGroup = device.groupId;
+    loadEditors(m_configs.value(m_currentGroup));
+  }
   setEnabled(true);
   m_ui->deviceNameLabel->setText(device.displayName());
   m_ui->stateLabel->setText(device.hasStatus ? messages::status_message::stateName(device.state) : QStringLiteral("—"));
@@ -106,9 +105,59 @@ void DeviceDetailPanel::showDevice(const core::DeviceState &device) {
   // UTC, ending in Z, like every other time the console shows.
   m_ui->lastUpdateValueLabel->setText(device.lastUpdate.isValid() ? device.lastUpdate.toString(Qt::ISODate)
                                                                   : QStringLiteral("—"));
+  showSettings(m_configs.value(m_currentGroup));
   // Usable only while a command can reach the device.
   const bool connected = m_gateway != nullptr && m_gateway->state() == messages::DeviceGateway::State::Connected;
   m_ui->controlsGroup->setEnabled(device.online() && connected);
+}
+
+void DeviceDetailPanel::setTemperatureThreshold(const QString &groupId, std::optional<double> celsius) {
+  m_configs[groupId].temperatureThreshold = celsius;
+  if (groupId == m_currentGroup) {
+    showSettings(m_configs.value(groupId));
+  }
+}
+
+void DeviceDetailPanel::setHumidityThreshold(const QString &groupId, std::optional<double> percent) {
+  m_configs[groupId].humidityThreshold = percent;
+  if (groupId == m_currentGroup) {
+    showSettings(m_configs.value(groupId));
+  }
+}
+
+void DeviceDetailPanel::setInterval(const QString &groupId, std::optional<int> seconds) {
+  m_configs[groupId].interval = seconds;
+  if (groupId == m_currentGroup) {
+    showSettings(m_configs.value(groupId));
+  }
+}
+
+// Only on selection, so a setting that arrives does not overwrite an edit.
+void DeviceDetailPanel::loadEditors(const DeviceConfig &config) {
+  if (config.temperatureThreshold) {
+    m_ui->temperatureThresholdSpin->setValue(*config.temperatureThreshold);
+  }
+  if (config.humidityThreshold) {
+    m_ui->humidityThresholdSpin->setValue(*config.humidityThreshold);
+  }
+  if (config.interval) {
+    m_ui->intervalSpin->setValue(*config.interval);
+  }
+}
+
+void DeviceDetailPanel::showSettings(const DeviceConfig &config) {
+  const QString unknown = QStringLiteral("unknown");
+  m_ui->temperatureThresholdDeviceLabel->setText(
+      QStringLiteral("Device: %1")
+          .arg(config.temperatureThreshold
+                   ? messages::observation::format(config.temperatureThreshold, QStringLiteral("°C"))
+                   : unknown));
+  m_ui->humidityThresholdDeviceLabel->setText(
+      QStringLiteral("Device: %1")
+          .arg(config.humidityThreshold ? messages::observation::format(config.humidityThreshold, QStringLiteral("%"))
+                                        : unknown));
+  m_ui->intervalDeviceLabel->setText(
+      QStringLiteral("Device: %1").arg(config.interval ? QStringLiteral("%1 s").arg(*config.interval) : unknown));
 }
 
 void DeviceDetailPanel::publishTemperatureThreshold() {

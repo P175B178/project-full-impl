@@ -95,7 +95,7 @@
      <property name="title">
       <string>Configuration</string>
      </property>
-     <layout class="QGridLayout" name="controlsGrid" columnstretch="0,0,1,0">
+     <layout class="QGridLayout" name="controlsGrid" columnstretch="0,0,1,0,0">
       <item row="0" column="0">
        <widget class="QLabel" name="temperatureThresholdCaption">
         <property name="text">
@@ -124,6 +124,13 @@
        <widget class="QPushButton" name="temperatureThresholdSetButton">
         <property name="text">
          <string>Set</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="temperatureThresholdDeviceLabel">
+        <property name="text">
+         <string>Device: unknown</string>
         </property>
        </widget>
       </item>
@@ -158,6 +165,13 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="4">
+       <widget class="QLabel" name="humidityThresholdDeviceLabel">
+        <property name="text">
+         <string>Device: unknown</string>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="intervalCaption">
         <property name="text">
@@ -176,6 +190,13 @@
        <widget class="QPushButton" name="intervalSetButton">
         <property name="text">
          <string>Set</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="4">
+       <widget class="QLabel" name="intervalDeviceLabel">
+        <property name="text">
+         <string>Device: unknown</string>
         </property>
        </widget>
       </item>
