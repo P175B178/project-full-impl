@@ -27,7 +27,7 @@ DeviceGateway::~DeviceGateway() = default;
 void DeviceGateway::route(const QString &topic, const QByteArray &payload) {
   const auto message = message_router::route(topic, payload);
   if (!message.has_value()) {
-    qCWarning(lcGateway).noquote() << message.error(); // a message that could not be used
+    drop(message.error());
     return;
   }
   std::visit(
@@ -36,6 +36,11 @@ void DeviceGateway::route(const QString &topic, const QByteArray &payload) {
           [this](const message_router::Status &received) { emit statusReceived(received.groupId, received.status); },
       },
       message.value());
+}
+
+void DeviceGateway::drop(const QString &detail) {
+  qCWarning(lcGateway).noquote() << detail;
+  emit messageDropped(detail);
 }
 
 } // namespace warden::messages

@@ -82,8 +82,40 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="logDock">
+   <property name="windowTitle">
+    <string>Log</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="logDockContents">
+    <layout class="QVBoxLayout" name="logDockLayout">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="warden::app::LogPanel" name="logPanel"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>warden::app::LogPanel</class>
+   <extends>QPlainTextEdit</extends>
+   <header>app/LogPanel.h</header>
+  </customwidget>
   <customwidget>
    <class>warden::app::DeviceListPanel</class>
    <extends>QWidget</extends>

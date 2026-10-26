@@ -54,6 +54,7 @@ qt_add_executable(warden-console
     src/app/DeviceDetailPanel.ui
     src/app/DeviceListPanel.cpp
     src/app/DeviceListPanel.ui
+    src/app/LogPanel.cpp
     src/app/MainWindow.cpp
     src/app/MainWindow.ui
     src/app/StateColorDelegate.cpp
