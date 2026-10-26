@@ -59,6 +59,8 @@
     "LANG": "C.UTF-8"
   },
 
+  "postCreateCommand": "git config core.hooksPath .githooks",
+
   // Open only desktop/ — its own .vscode/ (tasks, launch, settings) then applies.
   // The whole repository is still mounted, one level up.
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/desktop",

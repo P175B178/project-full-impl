@@ -1,7 +1,7 @@
 #include "app/MainWindow.h"
 
-#include "messages/DeviceGateway.h"
 #include "core/DeviceModel.h"
+#include "messages/DeviceGateway.h"
 
 #include <QApplication>
 #include <QHeaderView>

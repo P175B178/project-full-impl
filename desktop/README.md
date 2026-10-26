@@ -46,6 +46,19 @@ ctest --preset debug
 
 ## Utilities
 
+### Formatting
+
+clang-format formats C++ files on save in VS Code. The pre-commit hook in `.githooks/` at the
+repository root stops a commit whose staged C++ files are not formatted, and formats those without
+unstaged changes for you to review and stage. The dev container sets it up; elsewhere, run once:
+`git config core.hooksPath .githooks`.
+
+**VS Code task:** `Format all sources`
+
+```bash
+cmake --preset debug && cmake --build --preset debug --target format
+```
+
 ### Clean build directories
 
 Useful when builds get into a broken state:

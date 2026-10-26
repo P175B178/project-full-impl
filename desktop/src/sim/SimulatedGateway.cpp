@@ -107,8 +107,7 @@ void SimulatedGateway::tick(Device &device) {
   const double temperature = spike ? spikeTemp : normalTemp + device.warmer + variation;
   const double humidity    = baseHumidity + variation;
 
-  route(messages::topics::temperature(device.groupId),
-        temperatureObservation(device.deviceId, temperature, now));
+  route(messages::topics::temperature(device.groupId), temperatureObservation(device.deviceId, temperature, now));
   route(messages::topics::humidity(device.groupId), humidityObservation(device.deviceId, humidity, now));
 }
 

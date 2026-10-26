@@ -10,8 +10,8 @@ if ! command -v clang-format &>/dev/null; then
     exit 0
 fi
 
-# Only device/ is checked: the .clang-format that applies is device/.clang-format.
-mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR -- 'device/*.cpp' 'device/*.h')
+# Both programs are checked, each with the .clang-format in its own folder.
+mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR -- 'device/*.cpp' 'device/*.h' 'desktop/*.cpp' 'desktop/*.h')
 if [ ${#files[@]} -eq 0 ]; then
     exit 0
 fi

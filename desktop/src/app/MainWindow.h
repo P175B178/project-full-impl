@@ -25,7 +25,7 @@ public:
 private:
   core::DeviceModel *m_devices;
   messages::DeviceGateway *m_gateway; // main() owns it
-  QLabel *m_connectionState;      // permanent, at the right of the status bar
+  QLabel *m_connectionState;          // permanent, at the right of the status bar
 };
 
 } // namespace warden::app

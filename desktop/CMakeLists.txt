@@ -45,6 +45,26 @@ target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets)
 target_compile_definitions(warden-console PRIVATE WARDEN_CONSOLE_VERSION="${PROJECT_VERSION}")
 warden_configure_target(warden-console)
 
+# ── Format target ──
+find_program(CLANG_FORMAT_EXE clang-format)
+if(CLANG_FORMAT_EXE)
+    # A glob is fine here: this only lists files to format, not to build.
+    file(GLOB_RECURSE ALL_SOURCE_FILES CONFIGURE_DEPENDS
+        "${PROJECT_SOURCE_DIR}/src/*.h"
+        "${PROJECT_SOURCE_DIR}/src/*.cpp"
+        "${PROJECT_SOURCE_DIR}/tests/*.h"
+        "${PROJECT_SOURCE_DIR}/tests/*.cpp"
+    )
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT_EXE} -i ${ALL_SOURCE_FILES}
+        COMMENT "Formatting all source files"
+    )
+    add_custom_target(format-check
+        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror ${ALL_SOURCE_FILES}
+        COMMENT "Checking formatting (dry run)"
+    )
+endif()
+
 # ── Tests ──
 if(BUILD_TESTING)
     enable_testing()
