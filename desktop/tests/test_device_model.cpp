@@ -1,5 +1,6 @@
 #include "core/DeviceModel.h"
 #include "messages/Observation.h"
+#include "messages/StatusMessage.h"
 
 #include <gtest/gtest.h>
 
@@ -40,6 +41,14 @@ observation::Reading humidityReading(const QString &deviceId, double percent) {
       .value         = percent,
       .unit          = QStringLiteral("%"),
       .effectiveTime = QDateTime(QDate(2026, 1, 2), QTime(3, 4, 6), QTimeZone::UTC),
+  };
+}
+
+status_message::Status statusMessage(const QString &deviceId, status_message::State state) {
+  return status_message::Status{
+      .deviceId  = deviceId,
+      .state     = state,
+      .timestamp = QDateTime(QDate(2026, 1, 2), QTime(3, 4, 7), QTimeZone::UTC),
   };
 }
 
@@ -96,6 +105,64 @@ TEST(DeviceModelTest, DistinctGroupsInsertRowsInDiscoveryOrder) {
   EXPECT_EQ(cell(fixture.model, 1, DeviceModel::deviceColumn), "group-1-pi5");
 }
 
+TEST(DeviceModelTest, StateIsUnknownUntilTheFirstStatus) {
+  TestedModel fixture;
+
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::stateColumn), "—");
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::connectionColumn), "Online");
+}
+
+TEST(DeviceModelTest, StatusUpdatesStateAndKeepsDeviceOnline) {
+  TestedModel fixture;
+
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+  fixture.model.applyStatus("group-1", statusMessage("group-1-pi5", status_message::State::Warning));
+
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::stateColumn), "Warning");
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::connectionColumn), "Online");
+}
+
+TEST(DeviceModelTest, FaultKeepsDeviceOnline) {
+  TestedModel fixture;
+
+  fixture.model.applyStatus("group-1", statusMessage("group-1-pi5", status_message::State::Fault));
+
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::stateColumn), "Fault");
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::connectionColumn), "Online");
+}
+
+TEST(DeviceModelTest, OfflineStatusMarksDeviceOffline) {
+  TestedModel fixture;
+
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+  fixture.model.applyStatus("group-1", statusMessage("group-1-pi5", status_message::State::Offline));
+
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::stateColumn), "Offline");
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::connectionColumn), "Offline");
+}
+
+TEST(DeviceModelTest, DeviceMayBeDiscoveredByStatusFirst) {
+  TestedModel fixture;
+
+  fixture.model.applyStatus("group-1", statusMessage("group-1-pi5", status_message::State::Normal));
+
+  ASSERT_EQ(fixture.model.rowCount(), 1);
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::deviceColumn), "group-1-pi5");
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::temperatureColumn), "—");
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::connectionColumn), "Online");
+}
+
+TEST(DeviceModelTest, DisplayNameFallsBackToGroupId) {
+  TestedModel fixture;
+
+  // A status with no display name still discovers the device; the table shows the group.
+  fixture.model.applyStatus("group-1", statusMessage(QString(), status_message::State::Normal));
+
+  EXPECT_EQ(cell(fixture.model, 0, DeviceModel::deviceColumn), "group-1");
+}
+
 TEST(DeviceModelTest, ClearForgetsEveryDevice) {
   TestedModel fixture;
   fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
@@ -115,6 +182,8 @@ TEST(DeviceModelTest, HeaderLabelsEveryColumn) {
   EXPECT_EQ(fixture.model.headerData(DeviceModel::deviceColumn, Qt::Horizontal).toString(), "Device");
   EXPECT_EQ(fixture.model.headerData(DeviceModel::temperatureColumn, Qt::Horizontal).toString(), "Temperature");
   EXPECT_EQ(fixture.model.headerData(DeviceModel::humidityColumn, Qt::Horizontal).toString(), "Humidity");
+  EXPECT_EQ(fixture.model.headerData(DeviceModel::stateColumn, Qt::Horizontal).toString(), "State");
+  EXPECT_EQ(fixture.model.headerData(DeviceModel::connectionColumn, Qt::Horizontal).toString(), "Connection");
 }
 
 TEST(DeviceModelTest, DataOutsideRangeIsInvalid) {
@@ -123,4 +192,19 @@ TEST(DeviceModelTest, DataOutsideRangeIsInvalid) {
 
   EXPECT_FALSE(fixture.model.data(fixture.model.index(0, DeviceModel::deviceColumn), Qt::DecorationRole).isValid());
   EXPECT_FALSE(fixture.model.data(QModelIndex()).isValid());
+}
+
+TEST(DeviceModelTest, StateRoleGivesTheStateOnceItIsKnown) {
+  TestedModel fixture;
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+  const QModelIndex stateCell = fixture.model.index(0, DeviceModel::stateColumn);
+
+  EXPECT_FALSE(fixture.model.data(stateCell, DeviceModel::stateRole).isValid()); // readings only, so far
+
+  fixture.model.applyStatus("group-1", statusMessage("group-1-pi5", status_message::State::Alert));
+
+  EXPECT_EQ(fixture.model.data(stateCell, DeviceModel::stateRole).toInt(),
+            static_cast<int>(status_message::State::Alert));
+  // Only the state column carries it.
+  EXPECT_FALSE(fixture.model.data(fixture.model.index(0, DeviceModel::deviceColumn), DeviceModel::stateRole).isValid());
 }

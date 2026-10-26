@@ -49,7 +49,9 @@ warden_configure_target(warden_core)
 # ── Main executable ──
 qt_add_executable(warden-console
     src/main.cpp
+    src/app/Colors.cpp
     src/app/MainWindow.cpp
+    src/app/StateColorDelegate.cpp
     src/sim/SimulatedGateway.cpp
 )
 target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets)

@@ -1,5 +1,6 @@
 #include "app/MainWindow.h"
 
+#include "app/StateColorDelegate.h"
 #include "core/DeviceModel.h"
 #include "messages/DeviceGateway.h"
 
@@ -40,12 +41,14 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
 
   auto *deviceView = new QTableView(this);
   deviceView->setModel(m_devices);
+  deviceView->setItemDelegateForColumn(core::DeviceModel::stateColumn, new StateColorDelegate(this));
   deviceView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
   deviceView->verticalHeader()->setVisible(false);
   setCentralWidget(deviceView);
 
   // The gateway only emits; the window routes its signals into the model.
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_devices, &core::DeviceModel::applyReading);
+  connect(m_gateway, &messages::DeviceGateway::statusReceived, m_devices, &core::DeviceModel::applyStatus);
 
   // The gateway's state stays in view, at the right of the status bar.
   statusBar()->addPermanentWidget(m_connectionState);

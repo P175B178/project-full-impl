@@ -16,4 +16,10 @@ void DeviceState::apply(const messages::observation::Reading &reading) {
   }
 }
 
+void DeviceState::apply(const messages::status_message::Status &status) {
+  deviceId  = status.deviceId;
+  state     = status.state;
+  hasStatus = true;
+}
+
 } // namespace warden::core

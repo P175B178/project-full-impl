@@ -20,6 +20,12 @@ QVariant DeviceModel::data(const QModelIndex &index, int role) const {
   }
   const DeviceState &device = m_devices.at(index.row());
 
+  if (role == stateRole) {
+    if (index.column() != stateColumn || !device.hasStatus) {
+      return {};
+    }
+    return static_cast<int>(device.state);
+  }
   if (role != Qt::DisplayRole) {
     return {};
   }
@@ -30,6 +36,10 @@ QVariant DeviceModel::data(const QModelIndex &index, int role) const {
     return messages::observation::format(device.temperature, device.temperatureUnit);
   case humidityColumn:
     return messages::observation::format(device.humidity, device.humidityUnit);
+  case stateColumn:
+    return device.hasStatus ? messages::status_message::stateName(device.state) : QStringLiteral("—");
+  case connectionColumn:
+    return device.online() ? QStringLiteral("Online") : QStringLiteral("Offline");
   default:
     return {};
   }
@@ -46,6 +56,10 @@ QVariant DeviceModel::headerData(int section, Qt::Orientation orientation, int r
     return QStringLiteral("Temperature");
   case humidityColumn:
     return QStringLiteral("Humidity");
+  case stateColumn:
+    return QStringLiteral("State");
+  case connectionColumn:
+    return QStringLiteral("Connection");
   default:
     return {};
   }
@@ -54,6 +68,12 @@ QVariant DeviceModel::headerData(int section, Qt::Orientation orientation, int r
 void DeviceModel::applyReading(const QString &groupId, const messages::observation::Reading &reading) {
   const int row = ensureRow(groupId);
   m_devices[row].apply(reading);
+  emitRowChanged(row);
+}
+
+void DeviceModel::applyStatus(const QString &groupId, const messages::status_message::Status &status) {
+  const int row = ensureRow(groupId);
+  m_devices[row].apply(status);
   emitRowChanged(row);
 }
 

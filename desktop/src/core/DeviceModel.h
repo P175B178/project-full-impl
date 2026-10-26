@@ -2,6 +2,7 @@
 
 #include "core/DeviceState.h"
 #include "messages/Observation.h"
+#include "messages/StatusMessage.h"
 
 #include <QAbstractTableModel>
 #include <QList>
@@ -20,7 +21,13 @@ public:
   static constexpr int deviceColumn      = 0; // display name
   static constexpr int temperatureColumn = 1;
   static constexpr int humidityColumn    = 2;
-  static constexpr int columnTotal       = 3; // sentinel: number of columns
+  static constexpr int stateColumn       = 3;
+  static constexpr int connectionColumn  = 4; // online / offline
+  static constexpr int columnTotal       = 5; // sentinel: number of columns
+
+  /// Custom data role (int): the device's `messages::status_message::State` in the state column,
+  /// for a view that shows it in color; no value until the device has reported a status.
+  static constexpr int stateRole = Qt::UserRole + 1;
 
   explicit DeviceModel(QObject *parent = nullptr);
 
@@ -32,6 +39,9 @@ public:
 
   /// Route a parsed reading to its device, inserting a row if the group is new.
   void applyReading(const QString &groupId, const messages::observation::Reading &reading);
+
+  /// Route a parsed status message to its device, inserting a row if the group is new.
+  void applyStatus(const QString &groupId, const messages::status_message::Status &status);
 
   /// Forget every device, for a new source of device data.
   void clear();

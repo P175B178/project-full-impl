@@ -1,5 +1,6 @@
 #include "sim/SimulatedGateway.h"
 
+#include "messages/StatusMessage.h"
 #include "messages/Topics.h"
 
 #include <QDateTime>
@@ -7,6 +8,7 @@
 #include <QJsonObject>
 #include <QTimer>
 
+#include <array>
 #include <utility>
 
 namespace warden::sim {
@@ -21,8 +23,11 @@ constexpr double spikeTemp    = 38.0;
 constexpr double warmerTemp   = 2.0; // demo-2 runs this much warmer than demo-1
 constexpr double baseHumidity = 48.0;
 
-// The shortest interval the device allows: a demo should move.
-constexpr int intervalSeconds = 2;
+// The device's default thresholds (device/config/warden.toml), but the shortest interval it
+// allows: a demo should move.
+constexpr double temperatureThreshold = 28.0;
+constexpr double humidityThreshold    = 70.0;
+constexpr int intervalSeconds         = 2;
 
 QByteArray compact(const QJsonObject &object) { return QJsonDocument(object).toJson(QJsonDocument::Compact); }
 
@@ -51,6 +56,15 @@ QByteArray humidityObservation(const QString &deviceId, double percent, const QD
       {"code", QJsonObject{{"system", "http://loinc.org"}, {"code", "13834-7"}, {"display", "Humidity"}}},
       {"valueQuantity",
        QJsonObject{{"value", percent}, {"unit", "%"}, {"system", "http://unitsofmeasure.org"}, {"code", "%"}}},
+  });
+}
+
+// A status as the device publishes it (protocol/examples/status-*.json).
+QByteArray status(const QString &deviceId, messages::status_message::State state, const QDateTime &time) {
+  return compact({
+      {"deviceId", deviceId},
+      {"state", messages::status_message::stateName(state).toLower()},
+      {"timestamp", time.toString(Qt::ISODate)},
   });
 }
 
@@ -107,8 +121,15 @@ void SimulatedGateway::tick(Device &device) {
   const double temperature = spike ? spikeTemp : normalTemp + device.warmer + variation;
   const double humidity    = baseHumidity + variation;
 
+  // As on the device: a value above its threshold is exceeded; one exceeded is Warning, both Alert.
+  constexpr std::array byExceeded{messages::status_message::State::Normal, messages::status_message::State::Warning,
+                                  messages::status_message::State::Alert};
+  const auto exceeded = static_cast<std::size_t>(temperature > temperatureThreshold) +
+                        static_cast<std::size_t>(humidity > humidityThreshold);
+
   route(messages::topics::temperature(device.groupId), temperatureObservation(device.deviceId, temperature, now));
   route(messages::topics::humidity(device.groupId), humidityObservation(device.deviceId, humidity, now));
+  route(messages::topics::status(device.groupId), status(device.deviceId, byExceeded.at(exceeded), now));
 }
 
 } // namespace warden::sim
