@@ -37,6 +37,7 @@ add_library(warden_core STATIC
     src/core/DeviceMonitor.cpp
     src/core/DeviceState.cpp
     src/core/HistoryModel.cpp
+    src/messages/CommandSerializer.cpp
     src/messages/DeviceGateway.cpp
     src/messages/JsonMessage.cpp
     src/messages/MessageRouter.cpp

@@ -68,13 +68,17 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   connect(m_gateway, &messages::DeviceGateway::readingReceived, m_monitor, &core::DeviceMonitor::addReading);
   connect(m_gateway, &messages::DeviceGateway::statusReceived, m_devices, &core::DeviceModel::applyStatus);
   connect(m_gateway, &messages::DeviceGateway::messageDropped, m_ui->logPanel, &LogPanel::appendMessage);
+  connect(m_gateway, &messages::DeviceGateway::commandPublished, m_ui->logPanel, &LogPanel::appendMessage);
 
   // The gateway's state stays in view, at the right of the status bar.
   statusBar()->addPermanentWidget(m_connectionState);
   connect(m_gateway, &messages::DeviceGateway::stateChanged, this, [this](messages::DeviceGateway::State state) {
     m_connectionState->setText(stateText(state));
     m_ui->logPanel->appendMessage(stateText(state));
+    showDevice(m_currentGroup); // the controls work only while connected
   });
+
+  m_ui->detailPanel->setGateway(m_gateway);
 
   m_gateway->start();
 }
