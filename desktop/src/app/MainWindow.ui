@@ -99,6 +99,33 @@
          </layout>
         </widget>
       </widget>
+      <widget class="QStackedWidget" name="alertsStack">
+       <attribute name="title">
+        <string>Alerts</string>
+       </attribute>
+        <widget class="QLabel" name="alertsHint">
+         <property name="text">
+          <string>Tick devices in the list to see their changes of state here.</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QWidget" name="alertsPage">
+         <layout class="QVBoxLayout" name="alertsLayout">
+          <item>
+           <widget class="QTableView" name="alertView">
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+      </widget>
      </widget>
     </item>
    </layout>

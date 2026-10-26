@@ -33,6 +33,7 @@ endfunction()
 # Parsers and models: Qt6::Core only, no widgets and no broker, so the unit
 # tests can run them headless.
 add_library(warden_core STATIC
+    src/core/AlertLogModel.cpp
     src/core/DeviceModel.cpp
     src/core/DeviceMonitor.cpp
     src/core/DeviceState.cpp
@@ -59,6 +60,7 @@ qt_add_executable(warden-console
     src/app/DeviceDetailPanel.ui
     src/app/DeviceListPanel.cpp
     src/app/DeviceListPanel.ui
+    src/app/GroupFilterProxyModel.cpp
     src/app/LogPanel.cpp
     src/app/MainWindow.cpp
     src/app/MainWindow.ui

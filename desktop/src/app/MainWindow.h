@@ -8,6 +8,7 @@
 class QLabel;
 
 namespace warden::core {
+class AlertLogModel;
 class DeviceModel;
 class DeviceMonitor;
 } // namespace warden::core
@@ -22,6 +23,8 @@ class MainWindow;
 
 namespace warden::app {
 
+class GroupFilterProxyModel;
+
 /// Top-level window: it owns the device data and shows it. The data comes from the gateway that
 /// main() hands it.
 /// Laid out in MainWindow.ui; it wires the panels together.
@@ -35,11 +38,13 @@ public:
 
 private:
   void showDevice(const QString &groupId);
-  void updateScope(); // apply the ticked devices to the charts
+  void updateScope(); // apply the ticked devices to the charts and the alert log
 
   std::unique_ptr<Ui::MainWindow> m_ui;
   core::DeviceModel *m_devices;
   core::DeviceMonitor *m_monitor;
+  core::AlertLogModel *m_alerts;
+  GroupFilterProxyModel *m_alertFilter;
   messages::DeviceGateway *m_gateway; // main() owns it
   QLabel *m_connectionState;          // permanent, at the right of the status bar
   QString m_currentGroup;             // selected device, empty when none

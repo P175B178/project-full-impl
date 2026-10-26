@@ -14,6 +14,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(warden_console_tests
+    test_alert_log_model.cpp
     test_command_serializer.cpp
     test_config_message.cpp
     test_device_model.cpp

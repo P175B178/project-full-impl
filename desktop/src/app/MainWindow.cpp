@@ -4,15 +4,19 @@
 #include "app/ChartPanel.h"
 #include "app/DeviceDetailPanel.h"
 #include "app/DeviceListPanel.h"
+#include "app/GroupFilterProxyModel.h"
 #include "app/LogPanel.h"
 #include "app/ViolationHighlightDelegate.h"
+#include "core/AlertLogModel.h"
 #include "core/DeviceModel.h"
 #include "core/DeviceMonitor.h"
 #include "core/DeviceState.h"
 #include "core/HistoryModel.h"
 #include "messages/DeviceGateway.h"
+#include "messages/StatusMessage.h"
 
 #include <QAbstractItemModel>
+#include <QDateTime>
 #include <QDockWidget>
 #include <QHeaderView>
 #include <QLabel>
@@ -46,6 +50,8 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
       , m_ui(std::make_unique<Ui::MainWindow>())
       , m_devices(new core::DeviceModel(this))
       , m_monitor(new core::DeviceMonitor(this))
+      , m_alerts(new core::AlertLogModel(this))
+      , m_alertFilter(new GroupFilterProxyModel(core::AlertLogModel::groupIdRole, this))
       , m_gateway(&gateway)
       , m_connectionState(new QLabel(this)) {
   m_ui->setupUi(this);
@@ -61,8 +67,15 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   connect(m_ui->deviceList, &DeviceListPanel::deviceSelected, this, &MainWindow::showDevice);
   connect(m_devices, &QAbstractItemModel::dataChanged, this, [this] { showDevice(m_currentGroup); });
 
-  // Ticking devices in the list picks the ones the charts show.
+  // The alert log is shown through a filter, scoped to the ticked devices.
+  m_alertFilter->setSourceModel(m_alerts);
+  m_ui->alertView->setModel(m_alertFilter);
+  m_ui->alertView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // equal columns
+  m_ui->alertView->verticalHeader()->setVisible(false);
+
+  // Ticking devices in the list picks the ones the charts and the alert log show.
   connect(m_devices, &core::DeviceModel::checkedDevicesChanged, this, &MainWindow::updateScope);
+  updateScope();
 
   // View menu: show or hide the docks.
   auto *viewMenu = menuBar()->addMenu(QStringLiteral("&View"));
@@ -79,6 +92,10 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   connect(m_gateway, &messages::DeviceGateway::humidityThresholdReceived, m_ui->detailPanel,
           &DeviceDetailPanel::setHumidityThreshold);
   connect(m_gateway, &messages::DeviceGateway::intervalReceived, m_ui->detailPanel, &DeviceDetailPanel::setInterval);
+  connect(m_gateway, &messages::DeviceGateway::statusReceived, m_alerts,
+          [this](const QString &groupId, const messages::status_message::Status &status) {
+            m_alerts->recordStatus(groupId, status, QDateTime::currentDateTimeUtc());
+          });
   connect(m_gateway, &messages::DeviceGateway::messageDropped, m_ui->logPanel, &LogPanel::appendMessage);
   connect(m_gateway, &messages::DeviceGateway::commandPublished, m_ui->logPanel, &LogPanel::appendMessage);
 
@@ -119,7 +136,9 @@ void MainWindow::showDevice(const QString &groupId) {
 void MainWindow::updateScope() {
   const QStringList groups = m_devices->checkedGroups();
   m_ui->charts->setVisibleDevices(groups);
+  m_alertFilter->setAcceptedGroups(groups);
   m_ui->trendsStack->setCurrentWidget(groups.isEmpty() ? m_ui->trendsHint : m_ui->trendsPage);
+  m_ui->alertsStack->setCurrentWidget(groups.isEmpty() ? m_ui->alertsHint : m_ui->alertsPage);
 }
 
 } // namespace warden::app
