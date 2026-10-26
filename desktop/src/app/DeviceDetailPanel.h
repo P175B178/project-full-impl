@@ -57,6 +57,7 @@ private:
   void publishTemperatureThreshold();
   void publishHumidityThreshold();
   void publishInterval();
+  void publishForcedState();
 
   std::unique_ptr<Ui::DeviceDetailPanel> m_ui;
   messages::DeviceGateway *m_gateway = nullptr;

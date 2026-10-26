@@ -147,6 +147,15 @@ void SimulatedGateway::publishInterval(const QString &groupId, int seconds) {
   }
 }
 
+void SimulatedGateway::publishForcedState(const QString &groupId, messages::status_message::State state) {
+  // As on a device: the state shows at once, and the next reading decides again.
+  if (const Device *target = device(groupId); target != nullptr) {
+    publishConfig(messages::topics::forcedState(groupId), messages::command_serializer::forcedState(state),
+                  /*retain=*/false);
+    route(messages::topics::status(groupId), status(target->deviceId, state, QDateTime::currentDateTimeUtc()));
+  }
+}
+
 SimulatedGateway::Device *SimulatedGateway::device(const QString &groupId) {
   for (Device &device : m_devices) {
     if (device.groupId == groupId) {

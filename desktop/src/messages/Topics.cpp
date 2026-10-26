@@ -18,4 +18,6 @@ QString humidityThreshold(const QString &groupId) {
 
 QString interval(const QString &groupId) { return QStringLiteral("config/%1/interval").arg(groupId); }
 
+QString forcedState(const QString &groupId) { return QStringLiteral("config/%1/state").arg(groupId); }
+
 } // namespace warden::messages::topics

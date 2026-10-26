@@ -20,4 +20,8 @@ QByteArray humidityThreshold(double percent) { return serialize({{"value", perce
 
 QByteArray interval(int seconds) { return serialize({{"seconds", seconds}}); }
 
+QByteArray forcedState(status_message::State state) {
+  return serialize({{"state", status_message::stateName(state).toLower()}});
+}
+
 } // namespace warden::messages::command_serializer

@@ -33,9 +33,10 @@ public:
   [[nodiscard]] virtual State state() const = 0;
 
   /// Configuration commands for one group's device.
-  virtual void publishTemperatureThreshold(const QString &groupId, double celsius) = 0;
-  virtual void publishHumidityThreshold(const QString &groupId, double percent)    = 0;
-  virtual void publishInterval(const QString &groupId, int seconds)                = 0;
+  virtual void publishTemperatureThreshold(const QString &groupId, double celsius)     = 0;
+  virtual void publishHumidityThreshold(const QString &groupId, double percent)        = 0;
+  virtual void publishInterval(const QString &groupId, int seconds)                    = 0;
+  virtual void publishForcedState(const QString &groupId, status_message::State state) = 0;
 
 signals:
   /// A parsed reading for a device.

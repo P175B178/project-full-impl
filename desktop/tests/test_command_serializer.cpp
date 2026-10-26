@@ -33,6 +33,18 @@ TEST(CommandSerializerTest, IntervalMatchesTheExample) {
   EXPECT_EQ(parse(command_serializer::interval(5)), protocolExampleObject("config-interval.json"));
 }
 
+TEST(CommandSerializerTest, ForcedStateMatchesTheExample) {
+  EXPECT_EQ(parse(command_serializer::forcedState(status_message::State::Alert)),
+            protocolExampleObject("config-state.json"));
+}
+
+TEST(CommandSerializerTest, ForcedStateNames) {
+  EXPECT_EQ(parse(command_serializer::forcedState(status_message::State::Normal)).value("state").toString(), "normal");
+  EXPECT_EQ(parse(command_serializer::forcedState(status_message::State::Warning)).value("state").toString(),
+            "warning");
+  EXPECT_EQ(parse(command_serializer::forcedState(status_message::State::Fault)).value("state").toString(), "fault");
+}
+
 TEST(CommandSerializerTest, ProducesCompactJson) {
   // Compact: no spaces or newlines.
   const QByteArray payload = command_serializer::interval(10);

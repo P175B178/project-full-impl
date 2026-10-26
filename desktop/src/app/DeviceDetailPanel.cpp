@@ -9,6 +9,7 @@
 #include "messages/StatusMessage.h"
 
 #include <QColor>
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QGroupBox>
 #include <QLabel>
@@ -16,6 +17,7 @@
 #include <QSignalBlocker>
 #include <QSlider>
 #include <QSpinBox>
+#include <QVariant>
 
 #include <optional>
 
@@ -48,11 +50,17 @@ DeviceDetailPanel::DeviceDetailPanel(QWidget *parent)
   m_ui->humidityThresholdSlider->setRange(static_cast<int>(messages::config_message::minHumidityThreshold),
                                           static_cast<int>(messages::config_message::maxHumidityThreshold));
 
+  using State = messages::status_message::State;
+  for (const State state : {State::Normal, State::Warning, State::Alert, State::Fault}) {
+    m_ui->forcedStateCombo->addItem(messages::status_message::stateName(state), static_cast<int>(state));
+  }
+
   // Only Set sends a value: editing alone sends nothing.
   connect(m_ui->temperatureThresholdSetButton, &QPushButton::clicked, this,
           &DeviceDetailPanel::publishTemperatureThreshold);
   connect(m_ui->humidityThresholdSetButton, &QPushButton::clicked, this, &DeviceDetailPanel::publishHumidityThreshold);
   connect(m_ui->intervalSetButton, &QPushButton::clicked, this, &DeviceDetailPanel::publishInterval);
+  connect(m_ui->forcedStateSetButton, &QPushButton::clicked, this, &DeviceDetailPanel::publishForcedState);
 
   // Each slider follows its spin box, in whole steps.
   connect(m_ui->temperatureThresholdSpin, &QDoubleSpinBox::valueChanged, this, [this](double value) {
@@ -109,6 +117,7 @@ void DeviceDetailPanel::showDevice(const core::DeviceState &device) {
   // Usable only while a command can reach the device.
   const bool connected = m_gateway != nullptr && m_gateway->state() == messages::DeviceGateway::State::Connected;
   m_ui->controlsGroup->setEnabled(device.online() && connected);
+  m_ui->forcedStateGroup->setEnabled(device.online() && connected);
 }
 
 void DeviceDetailPanel::setTemperatureThreshold(const QString &groupId, std::optional<double> celsius) {
@@ -175,6 +184,13 @@ void DeviceDetailPanel::publishHumidityThreshold() {
 void DeviceDetailPanel::publishInterval() {
   if (!m_currentGroup.isEmpty() && m_gateway != nullptr) {
     m_gateway->publishInterval(m_currentGroup, m_ui->intervalSpin->value());
+  }
+}
+
+void DeviceDetailPanel::publishForcedState() {
+  const QVariant state = m_ui->forcedStateCombo->currentData();
+  if (!m_currentGroup.isEmpty() && m_gateway != nullptr && state.isValid()) {
+    m_gateway->publishForcedState(m_currentGroup, static_cast<messages::status_message::State>(state.toInt()));
   }
 }
 

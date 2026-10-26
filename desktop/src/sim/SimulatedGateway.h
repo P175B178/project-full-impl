@@ -28,6 +28,7 @@ public:
   void publishTemperatureThreshold(const QString &groupId, double celsius) override;
   void publishHumidityThreshold(const QString &groupId, double percent) override;
   void publishInterval(const QString &groupId, int seconds) override;
+  void publishForcedState(const QString &groupId, messages::status_message::State state) override;
 
 private:
   /// One simulated device, with the settings it was last sent.

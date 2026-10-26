@@ -11,4 +11,5 @@ TEST(TopicsTest, FollowTheProtocol) {
   EXPECT_EQ(topics::temperatureThreshold("group-1"), "config/group-1/temperature-threshold");
   EXPECT_EQ(topics::humidityThreshold("group-1"), "config/group-1/humidity-threshold");
   EXPECT_EQ(topics::interval("group-1"), "config/group-1/interval");
+  EXPECT_EQ(topics::forcedState("group-1"), "config/group-1/state");
 }

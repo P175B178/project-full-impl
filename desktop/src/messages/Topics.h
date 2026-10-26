@@ -12,5 +12,6 @@ namespace warden::messages::topics {
 [[nodiscard]] QString temperatureThreshold(const QString &groupId);
 [[nodiscard]] QString humidityThreshold(const QString &groupId);
 [[nodiscard]] QString interval(const QString &groupId);
+[[nodiscard]] QString forcedState(const QString &groupId);
 
 } // namespace warden::messages::topics
