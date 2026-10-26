@@ -8,6 +8,9 @@
 #include <QString>
 
 #include <memory>
+#include <optional>
+
+class QTimer;
 
 namespace warden::mqtt {
 
@@ -22,6 +25,8 @@ public:
   /// The broker the next start() connects to.
   void setBroker(const BrokerSettings &settings);
 
+  /// Connect to the broker, dropping any current connection first. A failed or lost connection is
+  /// retried every few seconds.
   void start() override;
   void stop() override;
   [[nodiscard]] State state() const override;
@@ -36,11 +41,15 @@ signals:
 
 private:
   void createClient();
+  void openConnection(const BrokerSettings &settings);
   void subscribeAll();
   void publishConfig(const QString &topicName, const QByteArray &payload, bool retain);
 
   std::unique_ptr<QMqttClient> m_client;
+  QTimer *m_reconnectTimer;
   BrokerSettings m_broker;
+  /// The broker to stay connected to; empty when told to disconnect.
+  std::optional<BrokerSettings> m_wanted;
 };
 
 } // namespace warden::mqtt

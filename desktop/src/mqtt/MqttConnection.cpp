@@ -5,6 +5,7 @@
 
 #include <QMqttTopicFilter>
 #include <QMqttTopicName>
+#include <QTimer>
 
 namespace warden::mqtt {
 
@@ -13,6 +14,9 @@ namespace {
 // The device's QoS: 0 for readings, which are frequent; 1 for the retained status and Last Will.
 constexpr quint8 sensorQos = 0;
 constexpr quint8 statusQos = 1;
+
+// Wait before retrying a failed or lost connection.
+constexpr int reconnectDelayMs = 3000;
 
 // Commands go QoS 1. Thresholds and the interval are retained: the device gets the latest one when
 // it (re)connects. A forced state lasts only until the next valid reading, so it is not: a device
@@ -42,24 +46,40 @@ messages::DeviceGateway::State mapState(QMqttClient::ClientState state) {
 } // namespace
 
 MqttConnection::MqttConnection(QObject *parent)
-      : DeviceGateway(parent) {
+      : DeviceGateway(parent)
+      , m_reconnectTimer(new QTimer(this)) {
+  m_reconnectTimer->setSingleShot(true);
+  m_reconnectTimer->setInterval(reconnectDelayMs);
+  connect(m_reconnectTimer, &QTimer::timeout, this, [this] {
+    if (m_wanted && m_client->state() == QMqttClient::Disconnected) {
+      openConnection(*m_wanted);
+    }
+  });
   createClient();
 }
 
 void MqttConnection::setBroker(const BrokerSettings &settings) { m_broker = settings; }
 
 void MqttConnection::start() {
+  m_wanted = m_broker;
+  m_reconnectTimer->stop();
   // A client takes a new host only while disconnected, so a new broker gets a new client.
   createClient();
-  m_client->setHostname(m_broker.host);
-  m_client->setPort(m_broker.port);
-  m_client->connectToHost();
+  openConnection(m_broker);
 }
 
 void MqttConnection::stop() {
+  m_wanted.reset();
+  m_reconnectTimer->stop();
   if (m_client->state() != QMqttClient::Disconnected) {
     m_client->disconnectFromHost();
   }
+}
+
+void MqttConnection::openConnection(const BrokerSettings &settings) {
+  m_client->setHostname(settings.host);
+  m_client->setPort(settings.port);
+  m_client->connectToHost();
 }
 
 void MqttConnection::createClient() {
@@ -69,8 +89,12 @@ void MqttConnection::createClient() {
   connect(m_client.get(), &QMqttClient::connected, this, &MqttConnection::subscribeAll);
   connect(m_client.get(), &QMqttClient::messageReceived, this,
           [this](const QByteArray &payload, const QMqttTopicName &topic) { route(topic.name(), payload); });
-  connect(m_client.get(), &QMqttClient::stateChanged, this,
-          [this](QMqttClient::ClientState state) { emit stateChanged(mapState(state)); });
+  connect(m_client.get(), &QMqttClient::stateChanged, this, [this](QMqttClient::ClientState state) {
+    emit stateChanged(mapState(state));
+    if (state == QMqttClient::Disconnected && m_wanted && !m_reconnectTimer->isActive()) {
+      m_reconnectTimer->start();
+    }
+  });
   connect(m_client.get(), &QMqttClient::errorChanged, this, [this](QMqttClient::ClientError error) {
     if (error != QMqttClient::NoError) {
       emit errorOccurred(errorText(error));
