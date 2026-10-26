@@ -23,4 +23,8 @@ namespace warden::app {
 /// repeat.
 [[nodiscard]] QColor seriesColor(qsizetype index);
 
+/// The hint that the charts are paused: dark text on a light amber band of its own.
+[[nodiscard]] QColor hintText();
+[[nodiscard]] QColor hintBackground();
+
 } // namespace warden::app

@@ -64,6 +64,7 @@ qt_add_executable(warden-console
     src/app/MainWindow.ui
     src/app/StateColorDelegate.cpp
     src/app/ViolationHighlightDelegate.cpp
+    src/app/ZoomableChartView.cpp
     src/sim/SimulatedGateway.cpp
 )
 target_link_libraries(warden-console PRIVATE warden_core Qt6::Widgets Qt6::Charts)

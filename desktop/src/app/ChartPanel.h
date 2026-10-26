@@ -11,6 +11,7 @@
 
 class QChart;
 class QDateTimeAxis;
+class QLabel;
 class QLineSeries;
 class QXYSeries;
 
@@ -41,12 +42,15 @@ private:
   QChart *m_humidityChart;
   QDateTimeAxis *m_temperatureTimeAxis;
   QDateTimeAxis *m_humidityTimeAxis;
+  QLabel *m_pauseHint; // shown while auto-scroll is paused
   QHash<QString, QLineSeries *> m_temperatureSeries;
   QHash<QString, QLineSeries *> m_humiditySeries;
   QHash<QString, QColor> m_colors;
   QSet<QString> m_visibleDevices; // devices whose series are shown
   qint64 m_latestMs;
   int m_windowSeconds;
+  // Off while the user has zoomed or panned.
+  bool m_autoScroll = true;
 };
 
 } // namespace warden::app

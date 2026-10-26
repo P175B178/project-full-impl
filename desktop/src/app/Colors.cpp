@@ -40,4 +40,8 @@ QColor seriesColor(qsizetype index) {
   return palette.at(index % palette.size());
 }
 
+QColor hintText() { return {QStringLiteral("#6d3a00")}; }
+
+QColor hintBackground() { return {QStringLiteral("#ffe0b2")}; }
+
 } // namespace warden::app

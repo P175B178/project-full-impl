@@ -1,11 +1,14 @@
 #include "app/ChartPanel.h"
 
 #include "app/Colors.h"
+#include "app/ZoomableChartView.h"
+
 #include <QAbstractAxis>
 #include <QChart>
-#include <QChartView>
 #include <QDateTime>
 #include <QDateTimeAxis>
+#include <QGraphicsLayout>
+#include <QLabel>
 #include <QLegend>
 #include <QLineSeries>
 #include <QPainter>
@@ -25,6 +28,28 @@ constexpr int msPerSecond          = 1000;
 constexpr int secondsPerMinute     = 60;
 constexpr qint64 msPerMinute       = static_cast<qint64>(secondsPerMinute) * msPerSecond;
 
+// Below this visible span, label the time axis with seconds; above it, with minutes.
+constexpr int secondsFormatThreshold = 120;
+constexpr int maxTimeTicks           = 6;
+constexpr int maxSecondTicks         = 4; // HH:mm:ssZ labels are wider
+
+// Picks the label format and tick count for the visible span: QDateTimeAxis spaces labels evenly,
+// so fixed minute labels would repeat when zoomed in close.
+void adaptTimeAxis(QDateTimeAxis *axis) {
+  const qint64 spanSeconds = axis->min().secsTo(axis->max());
+  if (spanSeconds <= 0) {
+    return;
+  }
+  if (spanSeconds <= secondsFormatThreshold) {
+    axis->setFormat(QStringLiteral("HH:mm:ss'Z'"));
+    axis->setTickCount(static_cast<int>(qMax<qint64>(2, qMin<qint64>(maxSecondTicks, spanSeconds + 1))));
+  } else {
+    axis->setFormat(QStringLiteral("HH:mm'Z'"));
+    axis->setTickCount(
+        static_cast<int>(qMax<qint64>(2, qMin<qint64>(maxTimeTicks, (spanSeconds / secondsPerMinute) + 1))));
+  }
+}
+
 // Y ranges: the device's default plausible range (device/config/warden.toml).
 constexpr double minTemperature = 0.0;
 constexpr double maxTemperature = 50.0;
@@ -33,6 +58,9 @@ constexpr double maxHumidity    = 100.0;
 
 QChart *makeChart(const QString &title) {
   auto *chart = new QChart;
+  // Thin margins: a small chart needs the room for its axis labels.
+  chart->layout()->setContentsMargins(0, 0, 0, 0);
+  chart->setBackgroundRoundness(0);
   chart->setTitle(title);
   chart->legend()->setVisible(true);
   chart->legend()->setAlignment(Qt::AlignRight); // height is scarcer than width
@@ -80,12 +108,37 @@ ChartPanel::ChartPanel(QWidget *parent)
   configureAxes(m_temperatureChart, m_temperatureTimeAxis, minTemperature, maxTemperature, QStringLiteral("°C"));
   configureAxes(m_humidityChart, m_humidityTimeAxis, minHumidity, maxHumidity, QStringLiteral("%"));
 
-  auto *temperatureView = new QChartView(m_temperatureChart, this);
+  // The span changes live and on zoom; the labels follow.
+  for (QDateTimeAxis *axis : {m_temperatureTimeAxis, m_humidityTimeAxis}) {
+    connect(axis, &QDateTimeAxis::rangeChanged, this, [axis] { adaptTimeAxis(axis); });
+  }
+
+  auto *temperatureView = new ZoomableChartView(m_temperatureChart, this);
   temperatureView->setRenderHint(QPainter::Antialiasing);
-  auto *humidityView = new QChartView(m_humidityChart, this);
+  auto *humidityView = new ZoomableChartView(m_humidityChart, this);
   humidityView->setRenderHint(QPainter::Antialiasing);
 
+  m_pauseHint = new QLabel(
+      QStringLiteral("Paused — scroll/drag zooms time; double-click a chart to resume the live view."), this);
+  m_pauseHint->setStyleSheet(
+      QStringLiteral("color: %1; background: %2; padding: 2px 6px;").arg(hintText().name(), hintBackground().name()));
+  m_pauseHint->setVisible(false);
+
+  // Pause the sliding window while the user inspects a zoomed/panned view; resume on reset.
+  for (ZoomableChartView *view : {temperatureView, humidityView}) {
+    connect(view, &ZoomableChartView::viewChanged, this, [this] {
+      m_autoScroll = false;
+      m_pauseHint->setVisible(true);
+    });
+    connect(view, &ZoomableChartView::viewReset, this, [this] {
+      m_autoScroll = true;
+      m_pauseHint->setVisible(false);
+      slideWindow();
+    });
+  }
+
   auto *layout = new QVBoxLayout(this);
+  layout->addWidget(m_pauseHint);
   layout->addWidget(temperatureView);
   layout->addWidget(humidityView);
 
@@ -153,6 +206,9 @@ QColor ChartPanel::colorFor(const QString &groupId) {
 }
 
 void ChartPanel::slideWindow() {
+  if (!m_autoScroll) {
+    return; // keep the user's zoom
+  }
   // Snap the right edge up to the next whole minute, so the ticks land on round HH:mm values.
   const qint64 end          = ((m_latestMs + msPerMinute - 1) / msPerMinute) * msPerMinute;
   const qint64 start        = end - (static_cast<qint64>(m_windowSeconds) * msPerSecond);
