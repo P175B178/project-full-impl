@@ -36,8 +36,10 @@ add_library(warden_core STATIC
     src/core/DeviceModel.cpp
     src/core/DeviceState.cpp
     src/messages/DeviceGateway.cpp
+    src/messages/JsonMessage.cpp
     src/messages/MessageRouter.cpp
     src/messages/Observation.cpp
+    src/messages/StatusMessage.cpp
     src/messages/Topics.cpp
 )
 target_include_directories(warden_core PUBLIC src)

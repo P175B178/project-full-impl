@@ -6,4 +6,6 @@ QString temperature(const QString &groupId) { return QStringLiteral("sensors/%1/
 
 QString humidity(const QString &groupId) { return QStringLiteral("sensors/%1/humidity").arg(groupId); }
 
+QString status(const QString &groupId) { return QStringLiteral("sensors/%1/status").arg(groupId); }
+
 } // namespace warden::messages::topics

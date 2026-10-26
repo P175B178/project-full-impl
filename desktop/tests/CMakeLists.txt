@@ -17,6 +17,7 @@ add_executable(warden_console_tests
     test_device_model.cpp
     test_message_router.cpp
     test_observation.cpp
+    test_status_message.cpp
     test_topics.cpp
 )
 

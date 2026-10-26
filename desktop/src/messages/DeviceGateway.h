@@ -1,6 +1,7 @@
 #pragma once
 
 #include "messages/Observation.h"
+#include "messages/StatusMessage.h"
 
 #include <QByteArray>
 #include <QObject>
@@ -32,6 +33,9 @@ public:
 signals:
   /// A parsed reading for a device.
   void readingReceived(const QString &groupId, const observation::Reading &reading);
+
+  /// A parsed status message for a device.
+  void statusReceived(const QString &groupId, const status_message::Status &status);
 
   /// The source's lifecycle, for the status bar.
   void stateChanged(DeviceGateway::State state);

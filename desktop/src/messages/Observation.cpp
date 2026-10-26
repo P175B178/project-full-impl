@@ -1,8 +1,7 @@
 #include "messages/Observation.h"
+#include "messages/JsonMessage.h"
 
-#include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonParseError>
 #include <QJsonValue>
 #include <QString>
 
@@ -18,41 +17,31 @@ constexpr int valuePrecision = 1;
 } // namespace
 
 std::expected<Reading, QString> parse(const QByteArray &payload) {
-  QJsonParseError parseError;
-  const QJsonDocument doc = QJsonDocument::fromJson(payload, &parseError);
-  if (parseError.error != QJsonParseError::NoError) {
-    return std::unexpected(QStringLiteral("invalid JSON: %1").arg(parseError.errorString()));
+  const auto root = json_message::parseObject(payload);
+  if (!root.has_value()) {
+    return std::unexpected(root.error());
   }
-  if (!doc.isObject()) {
-    return std::unexpected(QStringLiteral("payload is not a JSON object"));
-  }
-  const QJsonObject root = doc.object();
 
-  if (root.value("resourceType").toString() != QLatin1String("Observation")) {
+  if (root->value("resourceType").toString() != QLatin1String("Observation")) {
     return std::unexpected(QStringLiteral("resourceType is not \"Observation\""));
   }
 
-  const QString deviceId = root.value("deviceId").toString();
+  const QString deviceId = root->value("deviceId").toString();
   if (deviceId.isEmpty()) {
     return std::unexpected(QStringLiteral("missing required field: deviceId"));
   }
 
   // `status` must be present; its value is not constrained at the parsing boundary.
-  if (!root.value("status").isString()) {
+  if (!root->value("status").isString()) {
     return std::unexpected(QStringLiteral("missing required field: status"));
   }
 
-  // UTC only: a `Z` suffix; other offsets are rejected (protocol/).
-  const QString effectiveText = root.value("effectiveDateTime").toString();
-  if (!effectiveText.endsWith(QLatin1Char('Z'))) {
-    return std::unexpected(QStringLiteral("effectiveDateTime must be UTC and end with 'Z': \"%1\"").arg(effectiveText));
-  }
-  const QDateTime effectiveTime = QDateTime::fromString(effectiveText, Qt::ISODate);
-  if (!effectiveTime.isValid()) {
-    return std::unexpected(QStringLiteral("effectiveDateTime is not valid ISO-8601: \"%1\"").arg(effectiveText));
+  const auto effectiveTime = json_message::parseUtcTime(root.value(), QStringLiteral("effectiveDateTime"));
+  if (!effectiveTime.has_value()) {
+    return std::unexpected(effectiveTime.error());
   }
 
-  const QJsonValue codeValue = root.value("code");
+  const QJsonValue codeValue = root->value("code");
   if (!codeValue.isObject()) {
     return std::unexpected(QStringLiteral("missing required field: code"));
   }
@@ -66,7 +55,7 @@ std::expected<Reading, QString> parse(const QByteArray &payload) {
     return std::unexpected(QStringLiteral("unknown or missing LOINC code: \"%1\"").arg(loinc));
   }
 
-  const QJsonValue quantityValue = root.value("valueQuantity");
+  const QJsonValue quantityValue = root->value("valueQuantity");
   if (!quantityValue.isObject()) {
     return std::unexpected(QStringLiteral("missing required field: valueQuantity"));
   }
@@ -81,7 +70,7 @@ std::expected<Reading, QString> parse(const QByteArray &payload) {
       .metric        = metric,
       .value         = numericValue.toDouble(),
       .unit          = quantity.value("unit").toString(),
-      .effectiveTime = effectiveTime.toUTC(),
+      .effectiveTime = effectiveTime.value(),
   };
 }
 

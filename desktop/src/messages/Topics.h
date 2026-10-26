@@ -7,5 +7,6 @@ namespace warden::messages::topics {
 
 [[nodiscard]] QString temperature(const QString &groupId);
 [[nodiscard]] QString humidity(const QString &groupId);
+[[nodiscard]] QString status(const QString &groupId);
 
 } // namespace warden::messages::topics
