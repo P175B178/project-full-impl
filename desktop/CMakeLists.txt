@@ -13,7 +13,10 @@ qt_standard_project_setup()
 
 qt_add_executable(warden-console
     src/main.cpp
+    src/app/MainWindow.cpp
     src/messages/DeviceGateway.cpp
+    src/core/DeviceModel.cpp
+    src/core/DeviceState.cpp
     src/messages/MessageRouter.cpp
     src/messages/Observation.cpp
     src/messages/Topics.cpp
