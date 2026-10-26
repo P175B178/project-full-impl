@@ -30,6 +30,12 @@ QVariant DeviceModel::data(const QModelIndex &index, int role) const {
   }
   const DeviceState &device = m_devices.at(index.row());
 
+  if (role == Qt::CheckStateRole) {
+    if (index.column() != deviceColumn) {
+      return {};
+    }
+    return m_checked.contains(device.groupId) ? Qt::Checked : Qt::Unchecked;
+  }
   if (role == stateRole) {
     if (index.column() != stateColumn || !device.hasStatus) {
       return {};
@@ -84,6 +90,32 @@ QVariant DeviceModel::headerData(int section, Qt::Orientation orientation, int r
   }
 }
 
+Qt::ItemFlags DeviceModel::flags(const QModelIndex &index) const {
+  Qt::ItemFlags base = QAbstractTableModel::flags(index);
+  if (index.column() == deviceColumn) {
+    base |= Qt::ItemIsUserCheckable;
+  }
+  return base;
+}
+
+bool DeviceModel::setData(const QModelIndex &index, const QVariant &value, int role) {
+  if (role != Qt::CheckStateRole || index.column() != deviceColumn || index.row() < 0 ||
+      index.row() >= m_devices.size()) {
+    return false;
+  }
+  const QString &groupId = m_devices.at(index.row()).groupId;
+  if (value.toInt() == Qt::Checked) {
+    m_checked.insert(groupId);
+  } else {
+    m_checked.remove(groupId);
+  }
+  emit dataChanged(index, index, {Qt::CheckStateRole});
+  emit checkedDevicesChanged();
+  return true;
+}
+
+QStringList DeviceModel::checkedGroups() const { return {m_checked.cbegin(), m_checked.cend()}; }
+
 void DeviceModel::applyReading(const QString &groupId, const messages::observation::Reading &reading) {
   const int row = ensureRow(groupId);
   m_devices[row].apply(reading);
@@ -99,7 +131,9 @@ void DeviceModel::applyStatus(const QString &groupId, const messages::status_mes
 void DeviceModel::clear() {
   beginResetModel();
   m_devices.clear();
+  m_checked.clear();
   endResetModel();
+  emit checkedDevicesChanged();
 }
 
 const DeviceState *DeviceModel::device(const QString &groupId) const {

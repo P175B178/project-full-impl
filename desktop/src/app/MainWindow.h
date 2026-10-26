@@ -35,6 +35,7 @@ public:
 
 private:
   void showDevice(const QString &groupId);
+  void updateScope(); // apply the ticked devices to the charts
 
   std::unique_ptr<Ui::MainWindow> m_ui;
   core::DeviceModel *m_devices;

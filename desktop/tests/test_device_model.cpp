@@ -8,7 +8,9 @@
 #include <QDate>
 #include <QDateTime>
 #include <QModelIndex>
+#include <QSignalSpy>
 #include <QString>
+#include <QStringList>
 #include <QTime>
 #include <QTimeZone>
 
@@ -208,6 +210,52 @@ TEST(DeviceModelTest, DataOutsideRangeIsInvalid) {
 
   EXPECT_FALSE(fixture.model.data(fixture.model.index(0, DeviceModel::deviceColumn), Qt::DecorationRole).isValid());
   EXPECT_FALSE(fixture.model.data(QModelIndex()).isValid());
+}
+
+TEST(DeviceModelTest, DeviceColumnIsUserCheckable) {
+  TestedModel fixture;
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+
+  const Qt::ItemFlags flags = fixture.model.flags(fixture.model.index(0, DeviceModel::deviceColumn));
+  EXPECT_TRUE(flags.testFlag(Qt::ItemIsUserCheckable));
+}
+
+TEST(DeviceModelTest, DevicesStartUnchecked) {
+  TestedModel fixture;
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+
+  EXPECT_TRUE(fixture.model.checkedGroups().isEmpty());
+  EXPECT_EQ(fixture.model.data(fixture.model.index(0, DeviceModel::deviceColumn), Qt::CheckStateRole).toInt(),
+            Qt::Unchecked);
+}
+
+TEST(DeviceModelTest, CheckingADeviceTracksItAndSignals) {
+  TestedModel fixture;
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+  QSignalSpy spy(&fixture.model, &DeviceModel::checkedDevicesChanged);
+
+  const QModelIndex index = fixture.model.index(0, DeviceModel::deviceColumn);
+  ASSERT_TRUE(fixture.model.setData(index, Qt::Checked, Qt::CheckStateRole));
+
+  EXPECT_EQ(spy.count(), 1);
+  EXPECT_EQ(fixture.model.checkedGroups(), QStringList{"group-1"});
+  EXPECT_EQ(fixture.model.data(index, Qt::CheckStateRole).toInt(), Qt::Checked);
+
+  ASSERT_TRUE(fixture.model.setData(index, Qt::Unchecked, Qt::CheckStateRole));
+  EXPECT_TRUE(fixture.model.checkedGroups().isEmpty());
+}
+
+TEST(DeviceModelTest, ClearUnchecksEveryDevice) {
+  TestedModel fixture;
+  fixture.model.applyReading("group-1", temperatureReading("group-1-pi5", 23.5));
+  ASSERT_TRUE(
+      fixture.model.setData(fixture.model.index(0, DeviceModel::deviceColumn), Qt::Checked, Qt::CheckStateRole));
+  QSignalSpy spy(&fixture.model, &DeviceModel::checkedDevicesChanged);
+
+  fixture.model.clear();
+
+  EXPECT_EQ(spy.count(), 1);
+  EXPECT_TRUE(fixture.model.checkedGroups().isEmpty());
 }
 
 TEST(DeviceModelTest, StateRoleGivesTheStateOnceItIsKnown) {

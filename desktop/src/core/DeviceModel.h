@@ -7,7 +7,9 @@
 #include <QAbstractTableModel>
 #include <QList>
 #include <QModelIndex>
+#include <QSet>
 #include <QString>
+#include <QStringList>
 #include <QVariant>
 
 namespace warden::core {
@@ -40,6 +42,8 @@ public:
   [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   [[nodiscard]] QVariant
   headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const override;
+  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
   /// Route a parsed reading to its device, inserting a row if the group is new.
   void applyReading(const QString &groupId, const messages::observation::Reading &reading);
@@ -56,12 +60,20 @@ public:
   /// The device backing a given row. The row must be in range.
   [[nodiscard]] const DeviceState &deviceAt(int row) const;
 
+  /// Group ids of the devices the user has ticked.
+  [[nodiscard]] QStringList checkedGroups() const;
+
+signals:
+  /// Emitted whenever the set of ticked devices changes.
+  void checkedDevicesChanged();
+
 private:
   [[nodiscard]] int rowFor(const QString &groupId) const; // -1 if unknown
   int ensureRow(const QString &groupId);                  // returns the row, inserting if new
   void emitRowChanged(int row);
 
   QList<DeviceState> m_devices;
+  QSet<QString> m_checked; // group ids of the ticked devices
 };
 
 } // namespace warden::core

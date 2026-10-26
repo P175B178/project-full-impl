@@ -76,15 +76,28 @@
          </layout>
         </widget>
       </widget>
-      <widget class="QWidget" name="trendsPage">
+      <widget class="QStackedWidget" name="trendsStack">
        <attribute name="title">
         <string>Trends</string>
        </attribute>
-       <layout class="QVBoxLayout" name="trendsLayout">
-        <item>
-         <widget class="warden::app::ChartPanel" name="charts" native="true"/>
-        </item>
-       </layout>
+        <widget class="QLabel" name="trendsHint">
+         <property name="text">
+          <string>Tick devices in the list to plot them here.</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QWidget" name="trendsPage">
+         <layout class="QVBoxLayout" name="trendsLayout">
+          <item>
+           <widget class="warden::app::ChartPanel" name="charts" native="true"/>
+          </item>
+         </layout>
+        </widget>
       </widget>
      </widget>
     </item>

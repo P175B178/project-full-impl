@@ -4,7 +4,9 @@
 
 #include <QColor>
 #include <QHash>
+#include <QSet>
 #include <QString>
+#include <QStringList>
 #include <QWidget>
 
 class QChart;
@@ -25,6 +27,10 @@ public:
   /// Append one reading to the matching device/metric series and slide the window forward.
   void addReading(const QString &groupId, const messages::observation::Reading &reading);
 
+  /// Show only the given devices' series; others are hidden. New series for a hidden device
+  /// start hidden too.
+  void setVisibleDevices(const QStringList &groupIds);
+
 private:
   QLineSeries *seriesFor(const QString &groupId, messages::observation::Metric metric, const QString &name);
   QColor colorFor(const QString &groupId);
@@ -38,6 +44,7 @@ private:
   QHash<QString, QLineSeries *> m_temperatureSeries;
   QHash<QString, QLineSeries *> m_humiditySeries;
   QHash<QString, QColor> m_colors;
+  QSet<QString> m_visibleDevices; // devices whose series are shown
   qint64 m_latestMs;
   int m_windowSeconds;
 };

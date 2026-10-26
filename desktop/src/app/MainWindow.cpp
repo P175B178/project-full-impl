@@ -61,6 +61,9 @@ MainWindow::MainWindow(messages::DeviceGateway &gateway, QWidget *parent)
   connect(m_ui->deviceList, &DeviceListPanel::deviceSelected, this, &MainWindow::showDevice);
   connect(m_devices, &QAbstractItemModel::dataChanged, this, [this] { showDevice(m_currentGroup); });
 
+  // Ticking devices in the list picks the ones the charts show.
+  connect(m_devices, &core::DeviceModel::checkedDevicesChanged, this, &MainWindow::updateScope);
+
   // View menu: show or hide the docks.
   auto *viewMenu = menuBar()->addMenu(QStringLiteral("&View"));
   viewMenu->addAction(m_ui->deviceDock->toggleViewAction());
@@ -111,6 +114,12 @@ void MainWindow::showDevice(const QString &groupId) {
   if (m_ui->historyView->model() != history) {
     m_ui->historyView->setModel(history);
   }
+}
+
+void MainWindow::updateScope() {
+  const QStringList groups = m_devices->checkedGroups();
+  m_ui->charts->setVisibleDevices(groups);
+  m_ui->trendsStack->setCurrentWidget(groups.isEmpty() ? m_ui->trendsHint : m_ui->trendsPage);
 }
 
 } // namespace warden::app

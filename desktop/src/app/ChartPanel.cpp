@@ -102,6 +102,16 @@ void ChartPanel::addReading(const QString &groupId, const messages::observation:
   slideWindow();
 }
 
+void ChartPanel::setVisibleDevices(const QStringList &groupIds) {
+  m_visibleDevices = QSet<QString>(groupIds.cbegin(), groupIds.cend());
+  for (auto it = m_temperatureSeries.cbegin(); it != m_temperatureSeries.cend(); ++it) {
+    it.value()->setVisible(m_visibleDevices.contains(it.key()));
+  }
+  for (auto it = m_humiditySeries.cbegin(); it != m_humiditySeries.cend(); ++it) {
+    it.value()->setVisible(m_visibleDevices.contains(it.key()));
+  }
+}
+
 void ChartPanel::trim(QXYSeries *series) const {
   // Drop points older than the window, so the series stays bounded.
   const auto cutoff = static_cast<double>(m_latestMs - (static_cast<qint64>(m_windowSeconds) * msPerSecond));
@@ -126,6 +136,7 @@ QLineSeries *ChartPanel::seriesFor(const QString &groupId, messages::observation
   auto *series  = new QLineSeries;
   series->setName(name);
   series->setColor(colorFor(groupId));
+  series->setVisible(m_visibleDevices.contains(groupId));
   table.insert(groupId, series);
   addSortedByName(chart, table.values());
   return series;
