@@ -105,6 +105,8 @@ The package carries its own QtMqtt, which works only with the Qt version it was 
 the package requires exactly that version. An installed console connects to `localhost:1883` at
 first.
 
+CI builds the package too: download the `.deb` from the run's summary page on GitHub.
+
 ---
 
 ## Utilities

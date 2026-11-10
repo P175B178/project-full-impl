@@ -75,3 +75,48 @@ jobs:
 
       - name: Build and test (Release)
         run: cmake --workflow --preset release
+
+  # Builds the release package, exactly as the 'Workflow: Package' task does.
+  # The .deb can be downloaded from the run's summary page.
+  package:
+    runs-on: ubuntu-24.04
+    container: debian:13-slim
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      QT_ADDITIONAL_PACKAGES_PREFIX_PATH: /opt/qtmqtt
+      QT_VERSION: 6.8.2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build git ca-certificates \
+            qt6-base-dev qt6-base-private-dev qt6-charts-dev
+
+      - name: Cache QtMqtt
+        id: qtmqtt
+        uses: actions/cache@v4
+        with:
+          path: /opt/qtmqtt
+          key: qtmqtt-${{ env.QT_VERSION }}-debian13
+
+      - name: Build QtMqtt
+        if: steps.qtmqtt.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "v$QT_VERSION" https://github.com/qt/qtmqtt.git /tmp/qtmqtt
+          cmake -S /tmp/qtmqtt -B /tmp/qtmqtt-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/qtmqtt
+          cmake --build /tmp/qtmqtt-build
+          cmake --install /tmp/qtmqtt-build
+
+      - name: Build the package
+        run: cmake --workflow --preset package
+
+      - name: Keep the .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: warden-console-deb
+          path: desktop/package/*.deb
+          retention-days: 14
